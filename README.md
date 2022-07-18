@@ -1,4 +1,4 @@
-# NGenius Magento Plugin
+# NGenius WooCommerce Plugin
 
 ![Banner](assets/banner.jpeg)
 
