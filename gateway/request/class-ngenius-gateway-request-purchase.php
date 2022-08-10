@@ -3,9 +3,10 @@
 require_once 'class-ngenius-gateway-request-abstract.php';
 
 /**
- * Class NgeniusGatewayRequestSale
+ * NgeniusGatewayRequestPurchase class.
  */
-class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
+
+class NgeniusGatewayRequestPurchase extends NgeniusGatewayRequestAbstract
 {
 
 
@@ -24,7 +25,7 @@ class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
         }
         return [
             'data'   => [
-                'action'                 => 'SALE',
+                'action'                 => 'PURCHASE',
                 'amount'                 => [
                     'currencyCode' => $order->get_currency(),
                     'value'        => $amount,

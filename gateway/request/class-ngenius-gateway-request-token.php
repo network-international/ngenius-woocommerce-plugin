@@ -1,59 +1,67 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+if ( ! defined('ABSPATH')) {
+    exit;
 }
+
 /**
- * Ngenius_Gateway_Request_Token class.
+ * Class NgeniusGatewayRequestToken
  */
-class Ngenius_Gateway_Request_Token {
+class NgeniusGatewayRequestToken
+{
 
 
-	/**
-	 * @var Config
-	 */
-	protected $config;
+    /**
+     * @var Config
+     */
+    protected $config;
 
-	/**
-	 * Constructor
-	 *
-	 * @param Ngenius_Gateway_Config $config
-	 */
-	public function __construct( Ngenius_Gateway_Config $config ) {
-		$this->config = $config;
-	}
+    /**
+     * Constructor
+     *
+     * @param NgeniusGatewayConfig $config
+     */
+    public function __construct(NgeniusGatewayConfig $config)
+    {
+        $this->config = $config;
+    }
 
-	/**
-	 * Builds access token request
-	 *
-	 * @param  array $order
-	 * @param  float $amount
-	 * @return string|null
-	 */
-	public function get_access_token() {
+    /**
+     * Builds access token request
+     *
+     * @param array $order
+     * @param float $amount
+     *
+     * @return string|null
+     */
+    public function get_access_token()
+    {
+        $url = $this->config->get_token_request_url();
+        $key = $this->config->get_api_key();
 
-		$response = wp_remote_post(
-			$this->config->get_token_request_url(),
-			array(
-				'method'      => 'POST',
-				'httpversion' => '1.0',
-				'timeout'     => 30,
-				'headers'     => array(
-					'Authorization' => 'Basic ' . $this->config->get_api_key(),
-					'Content-Type'  => 'application/x-www-form-urlencoded',
-				),
-				'body'        => http_build_query( array( 'grant_type' => 'client_credentials' ) ),
-			)
-		);
-		if ( is_wp_error( $response ) ) {
-			echo $response->get_error_message();
-			die();
-		} else {
-			$result = json_decode( $response['body'] );
-			if ( isset( $result->access_token ) ) {
-				return $result->access_token;
-			}
-		}
-	}
+        $headers = array(
+            "Authorization: Basic $key",
+            "Content-Type:  application/vnd.ni-identity.v1+json"
+        );
+
+        $ch = curl_init();
+
+        $curlConfig = array(
+            CURLOPT_URL            => $url,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_RETURNTRANSFER => true,
+        );
+        curl_setopt_array($ch, $curlConfig);
+        $response = curl_exec($ch);
+        $result   = json_decode($response);
+
+        if (isset($result->access_token)) {
+            return $result->access_token;
+        } else {
+            $error_message = $result->errors[0]->message;
+            return new WP_Error('error', $error_message);
+        }
+    }
 
 }
