@@ -1,30 +1,39 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+if ( ! defined('ABSPATH')) {
+    exit;
 }
+
 /**
- * Ngenius_Gateway_Validator_Capture class.
+ * Class NgeniusGatewayValidatorCapture
  */
-class Ngenius_Gateway_Validator_Capture {
+class NgeniusGatewayValidatorCapture
+{
 
 
-	/**
-	 * Performs validation for capture transaction
-	 *
-	 * @param  array $response
-	 * @return bool|null
-	 */
-	public function validate( $response ) {
-		if ( is_wp_error( $response ) ) {
-			throw new Exception( $response->get_error_message() );
-		} else {
-			if ( ! isset( $response['result'] ) && ! is_array( $response['result'] ) ) {
-				return false;
-			} else {
-				return $response['result'];
-			}
-		}
-	}
+    /**
+     * Performs validation for capture transaction
+     *
+     * @param array $response
+     *
+     * @return bool|null
+     */
+    public function validate($response)
+    {
+        if (is_wp_error($response)) {
+            return array(
+                'status' => "failed",
+                'order_status' => "cancelled",
+                'error'  =>  $response->get_error_message(),
+                'message'  =>  $response->get_error_message(),
+            );
+        } else {
+            if ( ! isset($response['result']) && ! is_array($response['result'])) {
+                return false;
+            } else {
+                return $response['result'];
+            }
+        }
+    }
 
 }

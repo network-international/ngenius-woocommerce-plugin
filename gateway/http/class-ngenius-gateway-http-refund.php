@@ -1,83 +1,109 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
 /**
- * Ngenius_Gateway_Http_Refund class.
+ * NgeniusGatewayHttpRefund class.
  */
-class Ngenius_Gateway_Http_Refund extends Ngenius_Gateway_Http_Abstract {
+class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
+{
 
+    public function get_refunded_amount($response)
+    {
+        $refunded_amt    = 0;
+        $data            = array();
+        $transaction_arr = array();
+        $embeded         = self::NGENIUS_EMBEDED;
+        $refund_stmt     = self::NGENIUS_REFUND;
+        $cmp_refund      = 'cnp:refund';
+        if (isset($response->$embeded->$refund_stmt)) {
+            $transaction_arr = end($response->$embeded->$cmp_refund);
+            foreach ($response->$embeded->$refund_stmt as $refund) {
+                if (isset($refund->state) && ('SUCCESS' === $refund->state) && isset($refund->amount->value)) {
+                    $refunded_amt += $refund->amount->value;
+                }
+            }
+        }
 
-	/**
-	 * Processing of API request body
-	 *
-	 * @param  array $data
-	 * @return string
-	 */
-	protected function pre_process( array $data ) {
-		return json_encode( $data );
-	}
+        $last_refunded_amt = 0;
+        if (isset($transaction_arr->state) && ('SUCCESS' === $transaction_arr->state) && isset($transaction_arr->amount->value)) {
+            $last_refunded_amt = $transaction_arr->amount->value / 100;
+        }
 
-	/**
-	 * Processing of API response
-	 *
-	 * @param  array $response_enc
-	 * @return array|null
-	 */
-	protected function post_process( $response_enc ) {
+        $data['refunded_amount']   = $refunded_amt;
+        $data['transaction_arr']   = $transaction_arr;
+        $data['last_refunded_amt'] = $last_refunded_amt;
 
-		$response = json_decode( $response_enc, true );
+        return $data;
+    }
 
-		if ( isset( $response['errors'] ) && is_array( $response['errors'] ) ) {
-			return null;
-		} else {
-			$captured_amt = 0;
-			if ( isset( $response['_embedded']['cnp:capture'] ) && is_array( $response['_embedded']['cnp:capture'] ) ) {
-				foreach ( $response['_embedded']['cnp:capture'] as $capture ) {
-					if ( isset( $capture['state'] ) && ( 'SUCCESS' === $capture['state'] ) && isset( $capture['amount']['value'] ) ) {
-						$captured_amt += $capture['amount']['value'];
-					}
-				}
-			}
+    public function get_transaction_id($transaction_arr)
+    {
+        if (isset($transaction_arr->_links->self->href)) {
+            $transaction_arr = explode('/', $transaction_arr->_links->self->href);
 
-			$refunded_amt = 0;
-			if ( isset( $response['_embedded']['cnp:refund'] ) && is_array( $response['_embedded']['cnp:refund'] ) ) {
-				$transaction_arr = end( $response['_embedded']['cnp:refund'] );
-				foreach ( $response['_embedded']['cnp:refund'] as $refund ) {
-					if ( isset( $refund['state'] ) && ( 'SUCCESS' === $refund['state'] ) && isset( $refund['amount']['value'] ) ) {
-						$refunded_amt += $refund['amount']['value'];
-					}
-				}
-			}
+            return end($transaction_arr);
+        }
+    }
 
-			$last_refunded_amt = 0;
-			if ( isset( $transaction_arr['state'] ) && ( 'SUCCESS' === $transaction_arr['state'] ) && isset( $transaction_arr['amount']['value'] ) ) {
-				$last_refunded_amt = $transaction_arr['amount']['value'] / 100;
-			}
+    public function get_order_status($captured_amt, $refunded_amt)
+    {
+        if ($captured_amt === $refunded_amt) {
+            $order_status = 'refunded';
+        } else {
+            $order_status = substr($this->order_status[6]['status'], 3);
+        }
 
-			$transaction_id = '';
-			if ( isset( $transaction_arr['_links']['self']['href'] ) ) {
-				$transaction_arr = explode( '/', $transaction_arr['_links']['self']['href'] );
-				$transaction_id  = end( $transaction_arr );
-			}
-			$state = isset( $response['state'] ) ? $response['state'] : '';
+        return $order_status;
+    }
 
-			if ( $captured_amt === $refunded_amt ) {
-				$order_status = 'refunded';
-			} else {
-				$order_status = substr( $this->order_status[6]['status'], 3 );
-			}
-			return [
-				'result' => [
-					'captured_amt'   => ( $captured_amt - $refunded_amt ) / 100,
-					'refunded_amt'   => $last_refunded_amt,
-					'state'          => $state,
-					'order_status'   => $order_status,
-					'transaction_id' => $transaction_id,
-				],
-			];
-		}
-	}
+    /**
+     * Processing of API request body
+     *
+     * @param array $data
+     *
+     * @return string
+     */
+    protected function pre_process(array $data)
+    {
+        return json_encode($data);
+    }
+
+    /**
+     * Processing of API response
+     *
+     * @param array $response_enc
+     *
+     * @return array|null
+     */
+    protected function post_process($response)
+    {
+        if (isset($response->errors)) {
+           return [
+               'result' => []
+               ];
+        } else {
+            $refunded_data     = $this->get_refunded_amount($response);
+            $transaction_arr   = $refunded_data['transaction_arr'];
+            $refunded_amt      = $refunded_data['refunded_amount'] / 100;
+            $last_refunded_amt = $refunded_data['last_refunded_amt'];
+            $captured_amt = $response->amount->value / 100;
+
+            $transaction_id = $this->get_transaction_id($transaction_arr);
+
+            $state = isset($response->state) ? $response->state : '';
+
+            $order_status = $this->get_order_status($captured_amt, $refunded_amt);
+
+            return [
+                'result' => [
+                    'captured_amt'   => $refunded_amt,
+                    'refunded_amt'   => $last_refunded_amt,
+                    'state'          => $state,
+                    'order_status'   => $order_status,
+                    'transaction_id' => $transaction_id,
+                    'total_refunded_amount' => $refunded_amt,
+                ],
+            ];
+        }
+    }
 
 }

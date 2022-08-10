@@ -1,9 +1,9 @@
 <?php
 
 /**
- * NgeniusGatewayHttpAuthorize class.
+ * NgeniusGatewayHttpSale class.
  */
-class NgeniusGatewayHttpAuthorize extends NgeniusGatewayHttpAbstract
+class NgeniusGatewayHttpPurchase extends NgeniusGatewayHttpAbstract
 {
 
 

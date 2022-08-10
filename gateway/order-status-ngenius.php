@@ -1,41 +1,41 @@
 <?php
 
 /**
- * Order statuses for n-genius Gateway.
+ * Order statuses for N-Genius Gateway.
  */
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 return [
-	[
-		'status' => 'wc-ng-pending',
-		'label'  => 'n-genius Pending',
-	],
-	[
-		'status' => 'wc-ng-processing',
-		'label'  => 'n-genius Processing',
-	],
-	[
-		'status' => 'wc-ng-failed',
-		'label'  => 'n-genius Failed',
-	],
-	[
-		'status' => 'wc-ng-complete',
-		'label'  => 'n-genius Complete',
-	],
-	[
-		'status' => 'wc-ng-authorised',
-		'label'  => 'n-genius Authorised',
-	],
-	[
-		'status' => 'wc-ng-captured',
-		'label'  => 'n-genius Captured',
-	],
-	[
-		'status' => 'wc-ng-part-refunded',
-		'label'  => 'n-genius Partially Refunded',
-	],
-	[
-		'status' => 'wc-ng-auth-reversed',
-		'label'  => 'n-genius Auth Reversed',
-	],
+    [
+        'status' => 'wc-ng-pending',
+        'label'  => 'N-Genius Pending',
+    ],
+    [
+        'status' => 'wc-ng-processing',
+        'label'  => 'N-Genius Processing',
+    ],
+    [
+        'status' => 'wc-ng-failed',
+        'label'  => 'N-Genius Failed',
+    ],
+    [
+        'status' => 'wc-ng-complete',
+        'label'  => 'N-Genius Complete',
+    ],
+    [
+        'status' => 'wc-ng-authorised',
+        'label'  => 'N-Genius Authorised',
+    ],
+    [
+        'status' => 'wc-ng-captured',
+        'label'  => 'N-Genius Captured',
+    ],
+    [
+        'status' => 'wc-ng-part-refunded',
+        'label'  => 'N-Genius Partially Refunded',
+    ],
+    [
+        'status' => 'wc-ng-auth-reversed',
+        'label'  => 'N-Genius Auth Reversed',
+    ],
 ];
