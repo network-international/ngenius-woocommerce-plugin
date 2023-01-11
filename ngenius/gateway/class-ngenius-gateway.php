@@ -304,7 +304,7 @@ class NgeniusGateway extends NgeniusAbstract
      */
     public function update_ngenius_response()
     {
-        $order_ref = filter_input(INPUT_GET, 'ref', FILTER_SANITIZE_STRING);
+        $order_ref = filter_input(INPUT_GET, 'ref', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         include plugin_dir_path(__FILE__) . '/class-ngenius-gateway-payment.php';
         $payment = new NgeniusGatewayPayment();
         $payment->execute($order_ref);

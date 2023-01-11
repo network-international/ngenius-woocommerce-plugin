@@ -41,7 +41,8 @@ class NgeniusGatewayRequestToken
 
         $headers = array(
             "Authorization: Basic $key",
-            "Content-Type:  application/vnd.ni-identity.v1+json"
+            "Content-Type:  application/vnd.ni-identity.v1+json",
+            "Content-Length: 0"
         );
 
         $ch = curl_init();

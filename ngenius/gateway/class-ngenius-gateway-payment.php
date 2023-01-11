@@ -1,6 +1,6 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -57,7 +57,8 @@ class NgeniusGatewayPayment
             if ($result && isset($result->$embeded->payment) && is_array($result->$embeded->payment)) {
                 $action         = isset($result->action) ? $result->action : '';
                 $payment_result = $result->$embeded->payment[0];
-                $order_item     = reset($this->fetch_order('reference="' . $order_ref . '"'));
+                $array          = $this->fetch_order('reference="' . $order_ref . '"');
+                $order_item     = reset($array);
                 $order          = $this->process_order($payment_result, $order_item, $action);
                 $redirect_url   = $order->get_checkout_order_received_url();
             }
@@ -91,7 +92,7 @@ class NgeniusGatewayPayment
                     $this->order_authorize($order);
                 } elseif ($action == "SALE" || $action == "PURCHASE") {
                     echo "update_status";
-                    list($captured_amt, $capture_id) = $this->order_sale($order, $payment_result);
+                    list($captured_amt, $capture_id, $order, $sendInvoice) = $this->order_sale($order, $payment_result);
                 }
                 $data_table['status'] = $order->get_status();
             } else {
@@ -107,7 +108,7 @@ class NgeniusGatewayPayment
         $data_table_data['captured_amt'] = $captured_amt;
         $data_table_data['data_table']   = $data_table;
 
-        return $data_table_data;
+        return [$data_table_data, $sendInvoice ?? ''];
     }
 
     /**
@@ -128,7 +129,7 @@ class NgeniusGatewayPayment
 
             $order = wc_get_order($order_item->order_id);
             if ($order->get_id()) {
-                $data_table_data            = $this->update_order_status($action, $order, $payment_result);
+                list($data_table_data) = $this->update_order_status($action, $order, $payment_result);
                 $data_table                 = $data_table_data['data_table'];
                 $data_table['payment_id']   = $payment_id;
                 $data_table['captured_amt'] = $data_table_data['captured_amt'];
@@ -192,20 +193,23 @@ class NgeniusGatewayPayment
             $order->payment_complete($transaction_id);
             $order->update_status($this->order_status[3]['status']);
             $order->add_order_note($message);
-            $emailer = new WC_Emails();
-            $emailer->customer_invoice($order);
+            $order->save();
+            $order->update_status('completed');
+            $order->save();
+            $order->update_status($this->order_status[3]['status']);
+            $order->save();
 
-            return array($order->get_total(), $transaction_id);
+            return array($order->get_total(), $transaction_id, $order, true);
         } elseif (self::NGENIUS_PURCHASED === $this->ngenius_state) {
             $transaction_id = '';
-            $message = "Purchased Amount with action PURCHASED";
+            $message        = "Purchased Amount with action PURCHASED";
             $order->payment_complete($transaction_id);
             $order->update_status($this->order_status[3]['status']);
             $order->add_order_note($message);
             $emailer = new WC_Emails();
             $emailer->customer_invoice($order);
 
-            return array($order->get_total(), $transaction_id);
+            return array($order->get_total(), $transaction_id, $order, false);
         }
     }
 
