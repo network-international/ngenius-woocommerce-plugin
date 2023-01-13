@@ -30,7 +30,7 @@ class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
                     'value'        => $amount,
                 ],
                 'merchantAttributes'     => [
-                    'redirectUrl'          => site_url() . '/wc-api/ngeniusonline',
+                    'redirectUrl' => add_query_arg('wc-api', 'ngeniusonline', home_url('/')),
                     'skipConfirmationPage' => true,
                 ],
                 'merchantOrderReference' => $order->get_id(),

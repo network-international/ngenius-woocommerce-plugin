@@ -1,12 +1,13 @@
-# NGenius WooCommerce Plugin
+# N-Genius WooCommerce Plugin
 
 ![Banner](assets/banner.jpeg)
 
 ## Installation
 
-For instructions on setting up the NGenius WooCommerce plugin, please refer our [documentation.](https://docs.ngenius-payments.com/docs/woocommerce)
-
+For instructions on setting up the N-Genius WooCommerce plugin, please refer
+our [documentation.](https://docs.ngenius-payments.com/docs/woocommerce-new)
 
 ## Download
 
-You can download the latest version of the plugin from our [Github releases page](https://github.com/network-international/ngenius-woocommerce-plugin/releases)
+You can download the latest version of the plugin from
+our [Github releases page](https://github.com/network-international/ngenius-woocommerce-plugin/releases)

@@ -1,11 +1,23 @@
 <?php
 /*
  * Plugin Name: N-Genius Payment Gateway
- * Plugin URI: https://docs.ngenius-payments.com/docs/plugins
- * Description: N-Genius Online Gateway from Network International
+ * Plugin URI: https://github.com/network-international/ngenius-woocommerce-plugin/
+ * Description: Receive payments using the Network International Payment Solutions payments provider.
  * Author: Network International
- * Author URI: https://www.network.ae
- * Version: 1.0.1
+ * Author URI: https://www.network.ae/
+ * Version: 1.0.2
+ * Requires at least: 5.6
+ * Tested up to: 6.1.1
+ * WC tested up to: 7.2.2
+ * WC requires at least: 5.8
+ *
+ * Developer: App Inlet (Pty) Ltd
+ * Developer URI: https://www.appinlet.com/
+ *
+ * Copyright: © 2023 Network International
+ * License: GNU General Public License v3.0
+ * License URI: http://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: ngenius
  */
 
 /*

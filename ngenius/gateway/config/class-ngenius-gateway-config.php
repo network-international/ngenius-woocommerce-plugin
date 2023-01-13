@@ -1,6 +1,6 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -14,12 +14,12 @@ class NgeniusGatewayConfig
     /**
      * Config tags
      */
-    const TOKEN_ENDPOINT    = '/identity/auth/access-token';
-    const ORDER_ENDPOINT    = '/transactions/outlets/%s/orders';
-    const FETCH_ENDPOINT    = '/transactions/outlets/%s/orders/%s';
-    const CAPTURE_ENDPOINT  = '/transactions/outlets/%s/orders/%s/payments/%s/captures';
-    const REFUND_ENDPOINT   = '/transactions/outlets/%s/orders/%s/payments/%s/captures/%s/refund';
-    const VOID_ENDPOINT     = '/transactions/outlets/%s/orders/%s/payments/%s/cancel';
+    const TOKEN_ENDPOINT   = '/identity/auth/access-token';
+    const ORDER_ENDPOINT   = '/transactions/outlets/%s/orders';
+    const FETCH_ENDPOINT   = '/transactions/outlets/%s/orders/%s';
+    const CAPTURE_ENDPOINT = '/transactions/outlets/%s/orders/%s/payments/%s/captures';
+    const REFUND_ENDPOINT  = '/transactions/outlets/%s/orders/%s/payments/%s/captures/%s/refund';
+    const VOID_ENDPOINT    = '/transactions/outlets/%s/orders/%s/payments/%s/cancel';
 
     /**
      * Pointer to gateway making the request.
@@ -42,9 +42,9 @@ class NgeniusGatewayConfig
      *
      * @param NgeniusGateway $gateway N-Genius gateway object.
      */
-    public function __construct(NgeniusGateway $gateway, $order="")
+    public function __construct(NgeniusGateway $gateway, $order = "")
     {
-        $this->order = $order;
+        $this->order   = $order;
         $this->gateway = $gateway;
     }
 
@@ -75,7 +75,7 @@ class NgeniusGatewayConfig
      */
     public function is_complete()
     {
-        return ( ! empty($this->get_api_key()) && ! empty($this->get_outlet_reference_id()));
+        return (!empty($this->get_api_key()) && !empty($this->get_outlet_reference_id()));
     }
 
     /**
@@ -120,8 +120,11 @@ class NgeniusGatewayConfig
      */
     public function get_outlet_reference_id()
     {
-        return $this->should_use_outlet_override_ref() ? $this->gateway->get_option('outlet_override_ref') : $this->gateway->get_option('outlet_ref');
+        return $this->should_use_outlet_override_ref() ? $this->gateway->get_option(
+            'outlet_override_ref'
+        ) : $this->gateway->get_option('outlet_ref');
     }
+
     /**
      * Returns true or false if order currency is selected for Outlet Ref 2.
      *
@@ -131,13 +134,19 @@ class NgeniusGatewayConfig
     {
         $overriddenCurrencies = $this->gateway->get_option('outlet_override_currency');
         if (is_array($overriddenCurrencies)) {
-            $order_currency = method_exists($this->order, 'get_currency') ? $this->order->get_currency() : $this->order[0]->currency;
-            foreach ($overriddenCurrencies as $overriddenCurrency){
-                if ($order_currency === SettingsNgenius::$currencies[intval($overriddenCurrency)]) {
+            if (is_array($this->order) && !empty($this->order)) {
+                $orderCurrency = $this->order[0]->currency ?? '';
+            } else {
+                $orderCurrency = method_exists($this->order, 'get_currency') ?
+                    $this->order->get_currency() : '';
+            }
+            foreach ($overriddenCurrencies as $overriddenCurrency) {
+                if ($orderCurrency === SettingsNgenius::$currencies[intval($overriddenCurrency)]) {
                     return true;
                 }
             }
         }
+
         return false;
     }
 
