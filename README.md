@@ -1,6 +1,6 @@
 # N-Genius WooCommerce Plugin
 
-![Banner](assets/banner.jpeg)
+![Banner](ngenius/assets/banner.jpeg)
 
 ## Installation
 
