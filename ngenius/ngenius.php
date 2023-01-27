@@ -5,7 +5,7 @@
  * Description: Receive payments using the Network International Payment Solutions payments provider.
  * Author: Network International
  * Author URI: https://www.network.ae/
- * Version: 1.0.2
+ * Version: 1.0.3
  * Requires at least: 5.6
  * Tested up to: 6.1.1
  * WC tested up to: 7.2.2

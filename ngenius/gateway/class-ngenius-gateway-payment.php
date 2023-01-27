@@ -234,7 +234,7 @@ class NgeniusGatewayPayment
         $token_class = new NgeniusGatewayRequestToken($config);
         $token       = $token_class->get_access_token();
 
-        if ($token) {
+        if ($token && !is_wp_error($token)) {
             $transfer_class = new NgeniusGatewayHttpTransfer();
             $fetch_class    = new NgeniusGatewayHttpFetch();
             $request_data   = [
