@@ -181,7 +181,13 @@ class NgeniusGateway extends NgeniusAbstract
                 $transfer_class = new NgeniusGatewayHttpTransfer();
                 $validator      = new NgeniusGatewayValidatorResponse();
 
-                $response = $request_http->place_request($transfer_class->create($request_class->build($order)));
+                $tokenRequest = $request_class->build($order);
+                if (is_wp_error($tokenRequest['token'])) {
+                    wc_add_notice("Invalid Server Config", 'error');
+                    return null;
+                }
+
+                $response = $request_http->place_request($transfer_class->create($tokenRequest));
 
                 $result = $validator->validate($response);
 

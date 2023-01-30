@@ -63,6 +63,7 @@ abstract class NgeniusGatewayHttpAbstract
             CURLOPT_URL            => $url,
             CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
         );
         if($data) {
             $json_data = json_decode($data);

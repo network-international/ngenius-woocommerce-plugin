@@ -52,6 +52,7 @@ class NgeniusGatewayRequestToken
             CURLOPT_POST           => true,
             CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
         );
         curl_setopt_array($ch, $curlConfig);
         $response = curl_exec($ch);
