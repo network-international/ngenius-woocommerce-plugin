@@ -1,6 +1,6 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
@@ -9,8 +9,6 @@ if ( ! defined('ABSPATH')) {
  */
 class NgeniusGatewayRequestCapture
 {
-
-
     /**
      * @var Config
      */
@@ -49,5 +47,4 @@ class NgeniusGatewayRequestCapture
             ],
         ];
     }
-
 }

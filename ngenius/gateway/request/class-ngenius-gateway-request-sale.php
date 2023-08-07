@@ -7,8 +7,6 @@ require_once 'class-ngenius-gateway-request-abstract.php';
  */
 class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
 {
-
-
     /**
      * Builds sale request array
      *
@@ -18,15 +16,16 @@ class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
      */
     public function get_build_array($order)
     {
+        $currency = $order->get_currency();
         $amount = strval($order->get_total() * 100);
-        if ($order->get_currency() == "UGX") {
+        if ($currency === "UGX" || $currency === "XOF") {
             $amount = $amount/100;
         }
         return [
             'data'   => [
                 'action'                 => 'SALE',
                 'amount'                 => [
-                    'currencyCode' => $order->get_currency(),
+                    'currencyCode' => $currency,
                     'value'        => $amount,
                 ],
                 'merchantAttributes'     => [
@@ -44,5 +43,4 @@ class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
             'uri'    => $this->config->get_order_request_url(),
         ];
     }
-
 }

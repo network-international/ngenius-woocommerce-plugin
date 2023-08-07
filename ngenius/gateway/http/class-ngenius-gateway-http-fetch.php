@@ -5,8 +5,6 @@
  */
 class NgeniusGatewayHttpFetch extends NgeniusGatewayHttpAbstract
 {
-
-
     /**
      * Processing of API request body
      *
@@ -14,7 +12,7 @@ class NgeniusGatewayHttpFetch extends NgeniusGatewayHttpAbstract
      *
      * @return string
      */
-    protected function pre_process(array $data)
+    protected function pre_process(array $data): string
     {
         return json_encode($data);
     }
@@ -22,13 +20,12 @@ class NgeniusGatewayHttpFetch extends NgeniusGatewayHttpAbstract
     /**
      * Processing of API response
      *
-     * @param array $response_enc
+     * @param stdClass $response
      *
-     * @return array
+     * @return stdClass
      */
-    protected function post_process($response_enc)
+    protected function post_process(stdClass $response): stdClass
     {
-        return $response_enc;
+        return $response;
     }
-
 }

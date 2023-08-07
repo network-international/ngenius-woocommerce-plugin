@@ -9,17 +9,15 @@ if (!defined('ABSPATH')) {
  */
 class NgeniusGatewayConfig
 {
-
-
     /**
      * Config tags
      */
-    const TOKEN_ENDPOINT   = '/identity/auth/access-token';
-    const ORDER_ENDPOINT   = '/transactions/outlets/%s/orders';
-    const FETCH_ENDPOINT   = '/transactions/outlets/%s/orders/%s';
-    const CAPTURE_ENDPOINT = '/transactions/outlets/%s/orders/%s/payments/%s/captures';
-    const REFUND_ENDPOINT  = '/transactions/outlets/%s/orders/%s/payments/%s/captures/%s/refund';
-    const VOID_ENDPOINT    = '/transactions/outlets/%s/orders/%s/payments/%s/cancel';
+    public const TOKEN_ENDPOINT   = '/identity/auth/access-token';
+    public const ORDER_ENDPOINT   = '/transactions/outlets/%s/orders';
+    public const FETCH_ENDPOINT   = '/transactions/outlets/%s/orders/%s';
+    public const CAPTURE_ENDPOINT = '/transactions/outlets/%s/orders/%s/payments/%s/captures';
+    public const REFUND_ENDPOINT  = '/transactions/outlets/%s/orders/%s/payments/%s/captures/%s/refund';
+    public const VOID_ENDPOINT    = '/transactions/outlets/%s/orders/%s/payments/%s/cancel';
 
     /**
      * Pointer to gateway making the request.
@@ -53,7 +51,7 @@ class NgeniusGatewayConfig
      *
      * @param string $token
      */
-    public function set_token($token)
+    public function set_token(string $token): void
     {
         $this->token = $token;
     }
@@ -63,7 +61,7 @@ class NgeniusGatewayConfig
      *
      * @return string Token
      */
-    public function get_token()
+    public function get_token(): string
     {
         return $this->token;
     }
@@ -73,7 +71,7 @@ class NgeniusGatewayConfig
      *
      * @return bool
      */
-    public function is_complete()
+    public function is_complete(): bool
     {
         return (!empty($this->get_api_key()) && !empty($this->get_outlet_reference_id()));
     }
@@ -83,9 +81,9 @@ class NgeniusGatewayConfig
      *
      * @return string
      */
-    public function get_payment_action()
+    public function get_payment_action(): string
     {
-        return $this->gateway->get_option('payment_action');
+        return $this->gateway->get_option('paymentAction');
     }
 
     /**
@@ -93,7 +91,7 @@ class NgeniusGatewayConfig
      *
      * @return string
      */
-    public function get_environment()
+    public function get_environment(): string
     {
         return $this->gateway->get_option('environment');
     }
@@ -103,7 +101,7 @@ class NgeniusGatewayConfig
      *
      * @return string
      */
-    public function get_api_url()
+    public function get_api_url(): string
     {
         $value = $this->gateway->get_option('live_api_url');
         if ($this->get_environment() == "uat") {
@@ -118,11 +116,11 @@ class NgeniusGatewayConfig
      *
      * @return string
      */
-    public function get_outlet_reference_id()
+    public function get_outlet_reference_id(): string
     {
         return $this->should_use_outlet_override_ref() ? $this->gateway->get_option(
             'outlet_override_ref'
-        ) : $this->gateway->get_option('outlet_ref');
+        ) : $this->gateway->get_option('outletRef');
     }
 
     /**
@@ -155,9 +153,9 @@ class NgeniusGatewayConfig
      *
      * @return string
      */
-    public function get_api_key()
+    public function get_api_key(): string
     {
-        return $this->gateway->get_option('api_key');
+        return $this->gateway->get_option('apiKey');
     }
 
     /**
@@ -165,7 +163,7 @@ class NgeniusGatewayConfig
      *
      * @return string
      */
-    public function get_token_request_url()
+    public function get_token_request_url(): string
     {
         return $this->get_api_url() . sprintf(self::TOKEN_ENDPOINT);
     }
@@ -175,7 +173,7 @@ class NgeniusGatewayConfig
      *
      * @return string
      */
-    public function get_order_request_url()
+    public function get_order_request_url(): string
     {
         $endpoint = sprintf(self::ORDER_ENDPOINT, $this->get_outlet_reference_id());
 
@@ -185,13 +183,13 @@ class NgeniusGatewayConfig
     /**
      * Gets Fetch Request URL.
      *
-     * @param string $order_ref
+     * @param string $orderRef
      *
      * @return string
      */
-    public function get_fetch_request_url($order_ref)
+    public function get_fetch_request_url(string $orderRef): string
     {
-        $endpoint = sprintf(self::FETCH_ENDPOINT, $this->get_outlet_reference_id(), $order_ref);
+        $endpoint = sprintf(self::FETCH_ENDPOINT, $this->get_outlet_reference_id(), $orderRef);
 
         return $this->get_api_url() . $endpoint;
     }
@@ -199,14 +197,14 @@ class NgeniusGatewayConfig
     /**
      * Gets Order Capture URL.
      *
-     * @param string $order_ref
-     * @param string $payment_ref
+     * @param string $orderRef
+     * @param string $paymentRef
      *
      * @return string
      */
-    public function get_order_capture_url($order_ref, $payment_ref)
+    public function get_order_capture_url(string $orderRef, string $paymentRef): string
     {
-        $endpoint = sprintf(self::CAPTURE_ENDPOINT, $this->get_outlet_reference_id(), $order_ref, $payment_ref);
+        $endpoint = sprintf(self::CAPTURE_ENDPOINT, $this->get_outlet_reference_id(), $orderRef, $paymentRef);
 
         return $this->get_api_url() . $endpoint;
     }
@@ -214,20 +212,20 @@ class NgeniusGatewayConfig
     /**
      * Gets Order Refund URL.
      *
-     * @param string $order_ref
-     * @param string $payment_ref
-     * @param string $transaction_id
+     * @param string $orderRef
+     * @param string $paymentRef
+     * @param string $transactionId
      *
      * @return string
      */
-    public function get_order_refund_url($order_ref, $payment_ref, $transaction_id)
+    public function get_order_refund_url(string $orderRef, string $paymentRef, string $transactionId): string
     {
         $endpoint = sprintf(
             self::REFUND_ENDPOINT,
             $this->get_outlet_reference_id(),
-            $order_ref,
-            $payment_ref,
-            $transaction_id
+            $orderRef,
+            $paymentRef,
+            $transactionId
         );
 
         return $this->get_api_url() . $endpoint;
@@ -236,16 +234,25 @@ class NgeniusGatewayConfig
     /**
      * Gets Order Void URL.
      *
-     * @param string $order_ref
-     * @param string $payment_ref
+     * @param string $orderRef
+     * @param string $paymentRef
      *
      * @return string
      */
-    public function get_order_void_url($order_ref, $payment_ref)
+    public function get_order_void_url(string $orderRef, string $paymentRef): string
     {
-        $endpoint = sprintf(self::VOID_ENDPOINT, $this->get_outlet_reference_id(), $order_ref, $payment_ref);
+        $endpoint = sprintf(self::VOID_ENDPOINT, $this->get_outlet_reference_id(), $orderRef, $paymentRef);
 
         return $this->get_api_url() . $endpoint;
     }
 
+    public function get_default_complete_order_status(): string
+    {
+        return $this->gateway->get_option('default_complete_order_status') ?? "no";
+    }
+
+    public function get_http_version(): string
+    {
+        return $this->gateway->get_option('curl_http_version') ?? "CURL_HTTP_VERSION_NONE";
+    }
 }

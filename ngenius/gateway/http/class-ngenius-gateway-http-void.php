@@ -5,8 +5,6 @@
  */
 class NgeniusGatewayHttpVoid extends NgeniusGatewayHttpAbstract
 {
-
-
     /**
      * Processing of API request body
      *
@@ -14,7 +12,7 @@ class NgeniusGatewayHttpVoid extends NgeniusGatewayHttpAbstract
      *
      * @return string
      */
-    protected function pre_process(array $data)
+    protected function pre_process(array $data): string
     {
         return json_encode($data);
     }
@@ -22,26 +20,23 @@ class NgeniusGatewayHttpVoid extends NgeniusGatewayHttpAbstract
     /**
      * Processing of API response
      *
-     * @param array $response_enc
-     *
+     * @param stdClass $response
      * @return array|null
      */
-    protected function post_process($response)
+    protected function post_process(stdClass $response): ?array
     {
-
         if (isset($response->errors)) {
             return null;
         } else {
-            $state        = isset($response->state) ? $response->state : '';
-            $order_status = ('REVERSED' === $state) ? substr($this->order_status[7]['status'], 3) : '';
+            $state        = $response->state ?? '';
+            $order_status = ('REVERSED' === $state) ? substr($this->orderStatus[7]['status'], 3) : '';
 
             return [
                 'result' => [
                     'state'        => $state,
-                    'order_status' => $order_status,
+                    'orderStatus' => $order_status,
                 ],
             ];
         }
     }
-
 }

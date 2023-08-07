@@ -1,0 +1,7 @@
+{
+  "name": "ngenius/woocommerce",
+  "type": "composer-plugin",
+  "require": {
+    "ngenius/ngenius-common": "^1.0"
+  }
+}

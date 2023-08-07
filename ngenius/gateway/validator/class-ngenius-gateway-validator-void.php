@@ -1,6 +1,6 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
@@ -9,8 +9,6 @@ if ( ! defined('ABSPATH')) {
  */
 class NgeniusGatewayValidatorVoid
 {
-
-
     /**
      * Performs reversed the authorization
      *
@@ -23,17 +21,16 @@ class NgeniusGatewayValidatorVoid
         if (is_wp_error($response)) {
             return array(
                 'status' => "failed",
-                'order_status' => "cancelled",
+                'orderStatus' => "cancelled",
                 'error'  =>  $response->get_error_message(),
                 'message'  =>  $response->get_error_message(),
             );
         } else {
-            if ( ! isset($response['result']['order_status']) && empty($response['result']['order_status'])) {
+            if (! isset($response['result']['orderStatus']) && empty($response['result']['orderStatus'])) {
                 return false;
             } else {
                 return $response['result'];
             }
         }
     }
-
 }

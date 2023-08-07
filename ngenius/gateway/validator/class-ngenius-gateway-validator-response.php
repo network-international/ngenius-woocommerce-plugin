@@ -1,6 +1,6 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
@@ -9,8 +9,6 @@ if ( ! defined('ABSPATH')) {
  */
 class NgeniusGatewayValidatorResponse
 {
-
-
     /**
      * Performs response validation for transaction
      *
@@ -32,5 +30,4 @@ class NgeniusGatewayValidatorResponse
             }
         }
     }
-
 }

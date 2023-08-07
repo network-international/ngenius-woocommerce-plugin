@@ -1,0 +1,50 @@
+{
+    "packages": [
+        {
+            "name": "ngenius/ngenius-common",
+            "version": "v1.0.2",
+            "version_normalized": "1.0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/network-international/ngenius-common.git",
+                "reference": "728359e090ac2e02d1d53b812e17df4ffd5a559c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/network-international/ngenius-common/zipball/728359e090ac2e02d1d53b812e17df4ffd5a559c",
+                "reference": "728359e090ac2e02d1d53b812e17df4ffd5a559c",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.0"
+            },
+            "time": "2023-07-26T11:44:42+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Ngenius\\NgeniusCommon\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "App Inlet (Pty) Ltd",
+                    "email": "info@appinlet.com"
+                }
+            ],
+            "description": "N-Genius common class for modules.",
+            "homepage": "https://github.com/Ngenius/ngenius-common",
+            "support": {
+                "issues": "https://github.com/network-international/ngenius-common/issues",
+                "source": "https://github.com/network-international/ngenius-common/tree/v1.0.2"
+            },
+            "install-path": "../ngenius/ngenius-common"
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}
