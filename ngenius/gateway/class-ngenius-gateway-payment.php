@@ -4,42 +4,46 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+$f = dirname(__DIR__, 1);
+require_once "$f/vendor/autoload.php";
+
+use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
+use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
+
 /**
  * Ngenius_Gateway_Payment class.
  */
 class NgeniusGatewayPayment
 {
-
-
     /**
      * N-Genius states
      */
-    const NGENIUS_STARTED    = 'STARTED';
-    const NGENIUS_AUTHORISED = 'AUTHORISED';
-    const NGENIUS_CAPTURED   = 'CAPTURED';
-    const NGENIUS_PURCHASED  = 'PURCHASED';
-    const NGENIUS_FAILED     = 'FAILED';
-    const NGENIUS_EMBEDED    = '_embedded';
-    const NGENIUS_LINKS      = '_links';
+    public const NGENIUS_STARTED    = 'STARTED';
+    public const NGENIUS_AUTHORISED = 'AUTHORISED';
+    public const NGENIUS_CAPTURED   = 'CAPTURED';
+    public const NGENIUS_PURCHASED  = 'PURCHASED';
+    public const NGENIUS_FAILED     = 'FAILED';
+    public const NGENIUS_EMBEDED    = '_embedded';
+    public const NGENIUS_LINKS      = '_links';
 
     /**
      *
-     * @var string Order Status
+     * @var array Order Status
      */
-    protected $order_status;
+    protected array $orderStatus;
 
     /**
      *
      * @var string N-Genius state
      */
-    protected $ngenius_state;
+    protected string $ngeniusState;
 
     /**
      * Constructor
      */
     public function __construct()
     {
-        $this->order_status = include dirname(__FILE__) . '/order-status-ngenius.php';
+        $this->orderStatus = NgeniusOrderStatuses::orderStatuses();
     }
 
     /**
@@ -47,7 +51,7 @@ class NgeniusGatewayPayment
      *
      * @param string $order_ref Order reference
      */
-    public function execute($order_ref)
+    public function execute($order_ref): void
     {
         global $woocommerce;
         $redirect_url = wc_get_checkout_url();
@@ -57,7 +61,7 @@ class NgeniusGatewayPayment
             if ($result && isset($result->$embeded->payment) && is_array($result->$embeded->payment)) {
                 $action         = isset($result->action) ? $result->action : '';
                 $payment_result = $result->$embeded->payment[0];
-                $array          = $this->fetch_order('reference="' . $order_ref . '"');
+                $array          = $this->fetch_order("reference='" . $order_ref . "'");
                 $order_item     = reset($array);
                 $order          = $this->process_order($payment_result, $order_item, $action);
                 $redirect_url   = $order->get_checkout_order_received_url();
@@ -86,8 +90,8 @@ class NgeniusGatewayPayment
         $capture_id      = '';
         $captured_amt    = 0;
         $data_table_data = array();
-        if (self::NGENIUS_FAILED !== $this->ngenius_state) {
-            if (self::NGENIUS_STARTED !== $this->ngenius_state) {
+        if (self::NGENIUS_FAILED !== $this->ngeniusState) {
+            if (self::NGENIUS_STARTED !== $this->ngeniusState) {
                 if ($action == "AUTH") {
                     $this->order_authorize($order);
                 } elseif ($action == "SALE" || $action == "PURCHASE") {
@@ -95,13 +99,20 @@ class NgeniusGatewayPayment
                     list($captured_amt, $capture_id, $order, $sendInvoice) = $this->order_sale($order, $payment_result);
                 }
                 $data_table['status'] = $order->get_status();
+
+                $config = new NgeniusGatewayConfig(new NgeniusGateway());
+
+                if ($config->get_default_complete_order_status() === "yes") {
+                    $order->update_status('processing');
+                }
+
             } else {
-                $data_table['status'] = substr($this->order_status[0]['status'], 3);
+                $data_table['status'] = substr($this->orderStatus[0]['status'], 3);
             }
         } else {
-            $order->update_status($this->order_status[2]['status'], 'The transaction has been failed.');
+            $order->update_status($this->orderStatus[2]['status'], 'The transaction has been failed.');
             $order->update_status('failed');
-            $data_table['status'] = substr($this->order_status[2]['status'], 3);
+            $data_table['status'] = substr($this->orderStatus[2]['status'], 3);
         }
 
         $data_table_data['capture_id']   = $capture_id;
@@ -154,10 +165,10 @@ class NgeniusGatewayPayment
      */
     public function order_authorize($order)
     {
-        if (self::NGENIUS_AUTHORISED === $this->ngenius_state) {
+        if (self::NGENIUS_AUTHORISED === $this->ngeniusState) {
             $message = 'Authorised Amount: ' . $order->get_formatted_order_total();
             $order->payment_complete();
-            $order->update_status($this->order_status[4]['status']);
+            $order->update_status($this->orderStatus[4]['status']);
             $order->add_order_note($message);
         }
     }
@@ -172,7 +183,7 @@ class NgeniusGatewayPayment
      */
     public function order_sale($order, $payment_result)
     {
-        if (self::NGENIUS_CAPTURED === $this->ngenius_state) {
+        if (self::NGENIUS_CAPTURED === $this->ngeniusState) {
             $transaction_id = '';
             $embeded        = self::NGENIUS_EMBEDED;
             $capture        = "cnp:capture";
@@ -191,20 +202,25 @@ class NgeniusGatewayPayment
             $message = 'Captured Amount: ' . $order->get_formatted_order_total(
                 ) . ' | Transaction ID: ' . $transaction_id;
             $order->payment_complete($transaction_id);
-            $order->update_status($this->order_status[3]['status']);
+            $order->update_status($this->orderStatus[3]['status']);
             $order->add_order_note($message);
             $order->save();
-            $order->update_status('completed');
-            $order->save();
-            $order->update_status($this->order_status[3]['status']);
+
+            $config = new NgeniusGatewayConfig(new NgeniusGateway());
+
+            if ($config->get_default_complete_order_status() !== "yes") {
+                $order->update_status('completed');
+                $order->save();
+            }
+            $order->update_status($this->orderStatus[3]['status']);
             $order->save();
 
             return array($order->get_total(), $transaction_id, $order, true);
-        } elseif (self::NGENIUS_PURCHASED === $this->ngenius_state) {
+        } elseif (self::NGENIUS_PURCHASED === $this->ngeniusState) {
             $transaction_id = '';
             $message        = "Purchased Amount with action PURCHASED";
             $order->payment_complete($transaction_id);
-            $order->update_status($this->order_status[3]['status']);
+            $order->update_status($this->orderStatus[3]['status']);
             $order->add_order_note($message);
             $emailer = new WC_Emails();
             $emailer->customer_invoice($order);
@@ -229,24 +245,23 @@ class NgeniusGatewayPayment
         include_once dirname(__FILE__) . '/http/class-ngenius-gateway-http-fetch.php';
 
         $gateway     = new NgeniusGateway();
-        $order       = $this->fetch_order('reference="' . $order_ref . '"');
+        $order       = $this->fetch_order("reference='" . $order_ref . "'");
         $config      = new NgeniusGatewayConfig($gateway, $order);
         $token_class = new NgeniusGatewayRequestToken($config);
         $token       = $token_class->get_access_token();
 
         if ($token && !is_wp_error($token)) {
-            $transfer_class = new NgeniusGatewayHttpTransfer();
             $fetch_class    = new NgeniusGatewayHttpFetch();
-            $request_data   = [
-                'token'   => $token,
-                'request' => [
-                    'data'   => [],
-                    'method' => 'GET',
-                    'uri'    => $config->get_fetch_request_url($order_ref),
-                ],
-            ];
 
-            $response = $fetch_class->place_request($transfer_class->create($request_data));
+            $transfer_class = new NgeniusHttpTransfer(
+                $config->get_fetch_request_url($order_ref),
+                $config->get_http_version(),
+                'GET'
+            );
+
+            $transfer_class->setPaymentHeaders($token);
+
+            $response = $fetch_class->place_request($transfer_class);
 
             return $this->result_validator($response);
         }
@@ -267,8 +282,8 @@ class NgeniusGatewayPayment
             if (isset($result->errors)) {
                 return false;
             } else {
-                $embeded             = self::NGENIUS_EMBEDED;
-                $this->ngenius_state = isset($result->$embeded->payment[0]->state) ? $result->$embeded->payment[0]->state : '';
+                $embedded             = self::NGENIUS_EMBEDED;
+                $this->ngeniusState = $result->$embedded->payment[0]->state ?? '';
 
                 return $result;
             }
@@ -280,9 +295,9 @@ class NgeniusGatewayPayment
      *
      * @param string $where
      *
-     * @return object
+     * @return array
      */
-    public function fetch_order($where)
+    public function fetch_order(string $where): array
     {
         global $wpdb;
 
@@ -297,10 +312,10 @@ class NgeniusGatewayPayment
      *
      * @return bool true
      */
-    public function update_table(array $data, int $nid)
+    public function update_table(array $data, int $nid): bool
     {
         global $wpdb;
-        $data['state'] = $this->ngenius_state;
+        $data['state'] = $this->ngeniusState;
 
         return $wpdb->update(NGENIUS_TABLE, $data, array('nid' => $nid));
     }
@@ -308,20 +323,21 @@ class NgeniusGatewayPayment
     /**
      * Cron Job function
      */
-    public function order_update()
+    public function order_update(): bool|string
     {
         $order_items = $this->fetch_order(
-            'state = "' . self::NGENIUS_STARTED . '" AND payment_id="" AND DATE_ADD(created_at, INTERVAL 60 MINUTE) < NOW()'
+            "state = '" . self::NGENIUS_STARTED .
+            "' AND payment_id='' AND DATE_ADD(created_at, INTERVAL 60 MINUTE) < NOW()"
         );
         $log         = [];
-        $embeded     = self::NGENIUS_EMBEDED;
+        $embedded     = self::NGENIUS_EMBEDED;
         if (is_array($order_items)) {
             foreach ($order_items as $order_item) {
                 $order_ref = $order_item->reference;
                 $result    = $this->get_response_api($order_ref);
-                if ($result && isset($result->$embeded->payment)) {
-                    $action         = isset($result->action) ? $result->action : '';
-                    $payment_result = $result->$embeded->payment[0];
+                if ($result && isset($result->$embedded->payment)) {
+                    $action         = $result->action ?? '';
+                    $payment_result = $result->$embedded->payment[0];
                     $order          = $this->process_order($payment_result, $order_item, $action);
                     $log[]          = $order->get_id();
                 }
@@ -332,5 +348,4 @@ class NgeniusGatewayPayment
             return false;
         }
     }
-
 }

@@ -7,8 +7,6 @@ require_once 'class-ngenius-gateway-request-abstract.php';
  */
 class NgeniusGatewayRequestAuthorize extends NgeniusGatewayRequestAbstract
 {
-
-
     /**
      * Builds athorization request array
      *
@@ -18,20 +16,21 @@ class NgeniusGatewayRequestAuthorize extends NgeniusGatewayRequestAbstract
      */
     public function get_build_array($order)
     {
+        $currency = $order->get_currency();
         $amount = strval($order->get_total() * 100);
-        if ($order->get_currency() == "UGX") {
-            $amount = $amount / 100;
+        if ($currency === "UGX" || $currency === "XOF") {
+            $amount = $amount/100;
         }
 
         return [
             'data'   => [
                 'action'                 => 'AUTH',
                 'amount'                 => [
-                    'currencyCode' => $order->get_currency(),
+                    'currencyCode' => $currency,
                     'value'        => $amount,
                 ],
                 'merchantAttributes'     => [
-                    'redirectUrl'          => site_url() . '/wc-api/ngeniusonline',
+                    'redirectUrl'          => add_query_arg('wc-api', 'ngeniusonline', home_url('/')),
                     'skipConfirmationPage' => true,
                 ],
                 'merchantOrderReference' => $order->get_id(),
@@ -45,5 +44,4 @@ class NgeniusGatewayRequestAuthorize extends NgeniusGatewayRequestAbstract
             'uri'    => $this->config->get_order_request_url(),
         ];
     }
-
 }

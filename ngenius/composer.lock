@@ -1,0 +1,60 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "c91a6f67df1795090896b7ae0f7b2877",
+    "packages": [
+        {
+            "name": "ngenius/ngenius-common",
+            "version": "v1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/network-international/ngenius-common.git",
+                "reference": "728359e090ac2e02d1d53b812e17df4ffd5a559c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/network-international/ngenius-common/zipball/728359e090ac2e02d1d53b812e17df4ffd5a559c",
+                "reference": "728359e090ac2e02d1d53b812e17df4ffd5a559c",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Ngenius\\NgeniusCommon\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "App Inlet (Pty) Ltd",
+                    "email": "info@appinlet.com"
+                }
+            ],
+            "description": "N-Genius common class for modules.",
+            "homepage": "https://github.com/Ngenius/ngenius-common",
+            "support": {
+                "issues": "https://github.com/network-international/ngenius-common/issues",
+                "source": "https://github.com/network-international/ngenius-common/tree/v1.0.2"
+            },
+            "time": "2023-07-26T11:44:42+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.3.0"
+}

@@ -1,6 +1,6 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
@@ -10,8 +10,6 @@ if ( ! defined('ABSPATH')) {
  */
 class NgeniusGatewayRequestRefund
 {
-
-
     /**
      * @var Config
      */
@@ -35,7 +33,7 @@ class NgeniusGatewayRequestRefund
      *
      * @return array|null
      */
-    public function build($order_item,$amount,$url)
+    public function build($order_item, $amount, $url)
     {
         return [
             'token'   => $this->config->get_token(),
@@ -51,5 +49,4 @@ class NgeniusGatewayRequestRefund
             ],
         ];
     }
-
 }

@@ -1,104 +1,74 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
+
+$f = dirname(__DIR__, 2);
+require_once "$f/vendor/autoload.php";
+
+use \Ngenius\NgeniusCommon\NgeniusHTTPCommon;
+use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
+use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 
 /**
  * NgeniusGatewayHttpAbstract class.
  */
 abstract class NgeniusGatewayHttpAbstract
 {
-
-    const NGENIUS_EMBEDED = '_embedded';
-    const NGENIUS_CAPTURE = 'cnp:capture';
-    const NGENIUS_REFUND  = 'cnp:refund';
+    public const NGENIUS_EMBEDED = '_embedded';
+    public const NGENIUS_CAPTURE = 'cnp:capture';
+    public const NGENIUS_REFUND  = 'cnp:refund';
+    public const NGENIUS_CUP_RESULTS = 'cnp:china_union_pay_results';
 
     /**
      * Ngenius Order status.
      */
-    protected $order_status;
+    protected array $orderStatus;
 
     /**
      * Places request to gateway.
      *
-     * @param TransferInterface $transfer_object
+     * @param NgeniusHTTPTransfer $transferObject
      *
-     * @return array|null
+     * @return WP_Error|array|stdClass|null
      */
-    public function place_request(NgeniusGatewayHttpTransfer $transfer_object)
+    public function place_request(NgeniusHttpTransfer $transferObject): WP_Error|array|null|stdClass
     {
-        $this->order_status = include dirname(__FILE__) . '/../order-status-ngenius.php';
-        $data               = $this->pre_process($transfer_object->get_body());
+        $this->orderStatus = NgeniusOrderStatuses::orderStatuses();
 
         try {
-            $method = $transfer_object->get_method();
-
-            $response = $this->process_curl($transfer_object->get_uri(), $transfer_object->get_headers(), $data,$method);
+            $response = json_decode(NgeniusHTTPCommon::placeRequest($transferObject));
 
             if (isset($response->_id)) {
-                $return_data = $this->post_process($response);
+                $returnData = $this->post_process($response);
             } else {
-                $return_data = new WP_Error('ngenius_error', 'Failed! ' . $response->errors[0]->message);
+                $returnData = new WP_Error('ngenius_error', 'Failed! ' . $response->errors[0]->message);
             }
         } catch (Exception $e) {
-            $return_data = new WP_Error('error', $e->getMessage());
+            $returnData = new WP_Error('error', $e->getMessage());
         }
 
-        return $return_data;
+        return $returnData;
     }
 
-    public function process_curl($url, $args, $data,$method)
-    {
-        $authorization = "Authorization:" . $args['Authorization'];
-
-        $headers = array(
-            'Content-Type: application/vnd.ni-payment.v2+json',
-            $authorization,
-            'Accept: application/vnd.ni-payment.v2+json'
-        );
-
-        $ch         = curl_init();
-        $curlConfig = array(
-            CURLOPT_URL            => $url,
-            CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
-        );
-        if($data) {
-            $json_data = json_decode($data);
-        }
-
-        if (is_object($json_data)) {
-            $curlConfig[CURLOPT_POST]       = true;
-            $curlConfig[CURLOPT_POSTFIELDS] = $data;
-        }
-
-        if($method == "PUT"){
-            $curlConfig[CURLOPT_PUT]       = true;
-        }
-
-        curl_setopt_array($ch, $curlConfig);
-        $response = curl_exec($ch);
-
-        return json_decode($response);
-    }
-
-    /**
-     * Processing of API request body
-     *
-     * @param array $data
-     *
-     * @return string|array
-     */
     abstract protected function pre_process(array $data);
 
-    /**
-     * Processing of API response
-     *
-     * @param array $response
-     *
-     * @return array|null
-     */
-    abstract protected function post_process($response);
+
+    protected function post_process(stdClass $response): array|stdClass|null
+    {
+        if (isset($response->_links->payment->href)) {
+            global $wp_session;
+            $data                  = [];
+            $data['reference']     = $response->reference ?? '';
+            $data['action']        = $response->action ?? '';
+            $data['state']         = $response->_embedded->payment[0]->state ?? '';
+            $data['status']        = substr($this->orderStatus[0]['status'], 3);
+            $wp_session['ngenius'] = $data;
+
+            return ['payment_url' => $response->_links->payment->href];
+        } else {
+            return null;
+        }
+    }
 }

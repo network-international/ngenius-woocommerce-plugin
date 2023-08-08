@@ -5,14 +5,12 @@
  */
 class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
 {
-
-
-    public function get_total_amount($response)
+    public function get_total_amount($response): int
     {
         $amount = 0;
         $embedded = self::NGENIUS_EMBEDED;
-        $cnpcapture = self::NGENIUS_CAPTURE;
-        foreach ($response->$embedded->$cnpcapture as $capture) {
+        $cnpCapture = self::NGENIUS_CAPTURE;
+        foreach ($response->$embedded->$cnpCapture as $capture) {
             if (isset($capture->state) && ('SUCCESS' === $capture->state) && isset($capture->amount->value)) {
                 $amount += $capture->amount->value;
             }
@@ -21,31 +19,34 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
         return $amount;
     }
 
-    public function get_captured_amount($last_transaction)
+    public function get_captured_amount($lastTransaction): float|null
     {
-        if (isset($last_transaction->state) && ('SUCCESS' === $last_transaction->state) && isset($last_transaction->amount->value)) {
-            return $last_transaction->amount->value / 100;
+        if (isset($lastTransaction->state)
+            && ('SUCCESS' === $lastTransaction->state)
+            && isset($lastTransaction->amount->value)) {
+            return $lastTransaction->amount->value / 100;
         }
+        return null;
     }
 
-    public function get_transaction_id($last_transaction)
+    public function get_transaction_id($lastTransaction): bool|null|string
     {
-        if (isset($last_transaction->_links->self->href)) {
-            $transaction_arr = explode('/', $last_transaction->_links->self->href);
+        if (isset($lastTransaction->_links->self->href)) {
+            $transactionArr = explode('/', $lastTransaction->_links->self->href);
 
-            return end($transaction_arr);
-        }
+            return end($transactionArr);
+        } return null;
     }
 
-    public function get_order_status($state)
+    public function get_order_status($state): string
     {
         if ('PARTIALLY_CAPTURED' === $state) {
-            $order_status = substr($this->order_status[6]['status'], 3);
+            $orderStatus = substr($this->orderStatus[6]['status'], 3);
         } else {
-            $order_status = substr($this->order_status[5]['status'], 3);
+            $orderStatus = substr($this->orderStatus[5]['status'], 3);
         }
 
-        return $order_status;
+        return $orderStatus;
     }
 
     /**
@@ -55,7 +56,7 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
      *
      * @return string
      */
-    protected function pre_process(array $data)
+    protected function pre_process(array $data): string
     {
         return json_encode($data);
     }
@@ -67,38 +68,37 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
      *
      * @return array|null
      */
-    protected function post_process($response)
+    protected function post_process(stdClass $response): ?array
     {
         if (isset($response->errors)) {
             return null;
         } else {
             $amount = 0;
-            $last_transaction = array();
-            $embeded = self::NGENIUS_EMBEDED;
+            $lastTransaction = array();
+            $embedded = self::NGENIUS_EMBEDED;
             $capture = self::NGENIUS_CAPTURE;
-            if (isset($response->$embeded->$capture)) {
-                $last_transaction = end($response->$embeded->$capture);
+            if (isset($response->$embedded->$capture)) {
+                $lastTransaction = end($response->$embedded->$capture);
                 $amount           = $this->get_total_amount($response);
             }
-            $captured_amt = $this->get_captured_amount($last_transaction);
+            $capturedAmt = $this->get_captured_amount($lastTransaction);
 
-            $transaction_id = $this->get_transaction_id($last_transaction);
+            $transactionId = $this->get_transaction_id($lastTransaction);
 
             $amount = ($amount > 0) ? $amount / 100 : 0;
-            $state  = isset($response->state) ? $response->state : '';
+            $state  = $response->state ?? '';
 
-            $order_status = $this->get_order_status($state);
+            $orderStatus = $this->get_order_status($state);
 
             return [
                 'result' => [
                     'total_captured' => $amount,
-                    'captured_amt'   => $captured_amt,
+                    'captured_amt'   => $capturedAmt,
                     'state'          => $state,
-                    'order_status'   => $order_status,
-                    'transaction_id' => $transaction_id,
+                    'orderStatus'   => $orderStatus,
+                    'transaction_id' => $transactionId,
                 ],
             ];
         }
     }
-
 }

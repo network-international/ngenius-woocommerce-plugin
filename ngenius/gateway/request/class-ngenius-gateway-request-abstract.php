@@ -1,6 +1,6 @@
 <?php
 
-if ( ! defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
@@ -9,8 +9,6 @@ if ( ! defined('ABSPATH')) {
  */
 abstract class NgeniusGatewayRequestAbstract
 {
-
-
     /**
      * @var Config
      */
