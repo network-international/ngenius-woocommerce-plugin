@@ -5,11 +5,11 @@
  * Description: Receive payments using the Network International Payment Solutions payments provider.
  * Author: Network International
  * Author URI: https://www.network.ae/
- * Version: 1.0.4
+ * Version: 1.0.5
  * Requires at least: 6.0
  * Requires PHP: 8.0
- * Tested up to: 6.2.2
- * WC tested up to: 7.9.0
+ * Tested up to: 6.5.2
+ * WC tested up to: 8.8.3
  * WC requires at least: 6.0
  *
  * Developer: App Inlet (Pty) Ltd
@@ -25,7 +25,7 @@
  * This action hook registers our PHP class as a WooCommerce payment gateway
  */
 
-if ( version_compare( phpversion(), '8.0', '<' ) ) {
+if (version_compare(phpversion(), '8.0', '<')) {
     die("N-Genius Payment Gateway requires PHP 8.0 or higher.");
 }
 
@@ -35,9 +35,12 @@ require_once "$f/vendor/autoload.php";
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 
-define( 'WC_GATEWAY_NGENIUS_VERSION', '1.0.4' ); // WRCS: DEFINED_VERSION.
-define( 'WC_GATEWAY_NGENIUS_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
-define( 'WC_GATEWAY_NGENIUS_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
+define('WC_GATEWAY_NGENIUS_VERSION', '1.0.5'); // WRCS: DEFINED_VERSION.
+define(
+    'WC_GATEWAY_NGENIUS_URL',
+    untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__)))
+);
+define('WC_GATEWAY_NGENIUS_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
 function register_ngenius_order_status()
 {
@@ -61,6 +64,47 @@ function register_ngenius_order_status()
 }
 
 add_action('init', 'register_ngenius_order_status');
+add_action('init', 'custom_cancel_order_handler');
+
+/*
+ * Restore Cart if order is canceled
+ */
+function custom_cancel_order_handler(): void
+{
+    // Check if the cancel_order parameter is present
+    if (isset($_GET['cancel_order']) && $_GET['cancel_order'] === 'true') {
+        // Get the order ID
+        $order_id = isset($_GET['order_id']) ? absint($_GET['order_id']) : 0;
+
+        // Get the order object
+        $order = wc_get_order($order_id);
+
+        // Check if the order exists and has items
+        $order_items = $order ? $order->get_items() : array();
+
+        restoreCart($order_items);
+    }
+}
+
+/**
+ * @param array $order_items
+ *
+ * @return void
+ */
+function restoreCart(array $order_items): void
+{
+    if (!empty($order_items)) {
+        WC()->cart->empty_cart();
+        foreach ($order_items as $product) {
+            $product_id   = isset($product['product_id']) ? (int)$product['product_id'] : 0;
+            $quantity     = isset($product['quantity']) ? (int)$product['quantity'] : 1;
+            $variation_id = isset($product['variation_id']) ? (int)$product['variation_id'] : 0;
+            $variation    = isset($product['variation']) ? (array)$product['variation'] : array();
+            WC()->cart->add_to_cart($product_id, $quantity, $variation_id, $variation);
+        }
+        WC()->cart->calculate_totals();
+    }
+}
 
 function ngenius_order_status($order_statuses)
 {
@@ -143,7 +187,7 @@ function print_errors()
 
 function ngenius_init_gateway_class()
 {
-    if (! class_exists('WC_Payment_Gateway')) {
+    if (!class_exists('WC_Payment_Gateway')) {
         return;
     }
     include_once 'gateway/class-ngenius-gateway.php';
@@ -159,32 +203,47 @@ function ngenius_add_gateway_class($gateways)
 
 add_filter('woocommerce_payment_gateways', 'ngenius_add_gateway_class');
 
-add_action( 'woocommerce_blocks_loaded', 'woocommerce_ngenius_woocommerce_blocks_support' );
+add_action('woocommerce_blocks_loaded', 'woocommerce_ngenius_woocommerce_blocks_support');
 
-function woocommerce_ngenius_woocommerce_blocks_support() {
-    if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
-        require_once dirname( __FILE__ ) . '/gateway/class-wc-gateway-ngenius-blocks-support.php';
+function woocommerce_ngenius_woocommerce_blocks_support()
+{
+    if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {
+        require_once dirname(__FILE__) . '/gateway/class-wc-gateway-ngenius-blocks-support.php';
         add_action(
             'woocommerce_blocks_payment_method_type_registration',
-            function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
-                $payment_method_registry->register( new WC_Ngenius_Blocks_Support );
+            function (Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
+                $payment_method_registry->register(new WC_Ngenius_Blocks_Support);
             }
         );
     }
 }
 
-add_action( 'woocommerce_order_refunded', 'after_refund', 10, 1 );
+add_action('woocommerce_order_refunded', 'after_refund', 10, 1);
 
 function after_refund($order_id): void
 {
-    $statuses = NgeniusOrderStatuses::orderStatuses();
     $order = wc_get_order($order_id);
+    if ($order->get_payment_method() === "ngenius") {
+        $statuses = NgeniusOrderStatuses::orderStatuses();
 
-    if ((float)$order->get_remaining_refund_amount() > 0
-        && str_contains($statuses[3]["status"], $order->get_status())
-    ) {
-        $order->update_status($statuses[6]["status"]);
-    } else {
-        $order->update_status($statuses[8]["status"]);
+        if ((float)$order->get_remaining_refund_amount() > 0) {
+            $order->update_status($statuses[6]["status"]);
+        } else {
+            $order->update_status($statuses[8]["status"]);
+        }
     }
 }
+
+/**
+ * Declares support for HPOS.
+ *
+ * @return void
+ */
+function woocommerce_ngenius_declare_hpos_compatibility()
+{
+    if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
+}
+
+add_action('before_woocommerce_init', 'woocommerce_ngenius_declare_hpos_compatibility');

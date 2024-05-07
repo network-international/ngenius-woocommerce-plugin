@@ -21,6 +21,7 @@ class NgeniusGatewayHttpVoid extends NgeniusGatewayHttpAbstract
      * Processing of API response
      *
      * @param stdClass $response
+     *
      * @return array|null
      */
     protected function post_process(stdClass $response): ?array
@@ -33,7 +34,7 @@ class NgeniusGatewayHttpVoid extends NgeniusGatewayHttpAbstract
 
             return [
                 'result' => [
-                    'state'        => $state,
+                    'state'       => $state,
                     'orderStatus' => $order_status,
                 ],
             ];

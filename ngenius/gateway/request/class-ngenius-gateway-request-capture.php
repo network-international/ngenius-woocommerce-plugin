@@ -1,8 +1,10 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
+
+use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
 
 /**
  * NgeniusGatewayRequestCapture class.
@@ -33,14 +35,24 @@ class NgeniusGatewayRequestCapture
      */
     public function build($order_item)
     {
+        $currencyCode = $order_item->currency;
+
+        $amount = $order_item->amount;
+
+        ValueFormatter::formatCurrencyAmount($currencyCode, $amount);
+
         return [
             'token'   => $this->config->get_token(),
             'request' => [
                 'data'   => [
-                    'amount' => [
-                        'currencyCode' => $order_item->currency,
-                        'value'        => $order_item->amount * 100,
+                    'amount'              => [
+                        'currencyCode' => $currencyCode,
+                        'value'        => (int)($amount * 100),
                     ],
+                    'merchantDefinedData' => [
+                        'pluginName'    => 'woocommerce',
+                        'pluginVersion' => WC_GATEWAY_NGENIUS_VERSION
+                    ]
                 ],
                 'method' => 'POST',
                 'uri'    => $this->config->get_order_capture_url($order_item->reference, $order_item->payment_id),

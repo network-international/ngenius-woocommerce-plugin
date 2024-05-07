@@ -7,8 +7,8 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
 {
     public function get_total_amount($response): int
     {
-        $amount = 0;
-        $embedded = self::NGENIUS_EMBEDED;
+        $amount     = 0;
+        $embedded   = self::NGENIUS_EMBEDED;
         $cnpCapture = self::NGENIUS_CAPTURE;
         foreach ($response->$embedded->$cnpCapture as $capture) {
             if (isset($capture->state) && ('SUCCESS' === $capture->state) && isset($capture->amount->value)) {
@@ -26,6 +26,7 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
             && isset($lastTransaction->amount->value)) {
             return $lastTransaction->amount->value / 100;
         }
+
         return null;
     }
 
@@ -35,13 +36,15 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
             $transactionArr = explode('/', $lastTransaction->_links->self->href);
 
             return end($transactionArr);
-        } return null;
+        }
+
+        return null;
     }
 
     public function get_order_status($state): string
     {
         if ('PARTIALLY_CAPTURED' === $state) {
-            $orderStatus = substr($this->orderStatus[6]['status'], 3);
+            $orderStatus = substr($this->orderStatus[1]['status'], 3);
         } else {
             $orderStatus = substr($this->orderStatus[5]['status'], 3);
         }
@@ -73,13 +76,13 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
         if (isset($response->errors)) {
             return null;
         } else {
-            $amount = 0;
+            $amount          = 0;
             $lastTransaction = array();
-            $embedded = self::NGENIUS_EMBEDED;
-            $capture = self::NGENIUS_CAPTURE;
+            $embedded        = self::NGENIUS_EMBEDED;
+            $capture         = self::NGENIUS_CAPTURE;
             if (isset($response->$embedded->$capture)) {
                 $lastTransaction = end($response->$embedded->$capture);
-                $amount           = $this->get_total_amount($response);
+                $amount          = $this->get_total_amount($response);
             }
             $capturedAmt = $this->get_captured_amount($lastTransaction);
 
@@ -95,7 +98,7 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
                     'total_captured' => $amount,
                     'captured_amt'   => $capturedAmt,
                     'state'          => $state,
-                    'orderStatus'   => $orderStatus,
+                    'orderStatus'    => $orderStatus,
                     'transaction_id' => $transactionId,
                 ],
             ];

@@ -1,6 +1,6 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -52,6 +52,7 @@ class NgeniusGatewayRequestToken
             return $result->access_token;
         } else {
             $error_message = $result->errors[0]->message;
+
             return new WP_Error('error', $error_message);
         }
     }

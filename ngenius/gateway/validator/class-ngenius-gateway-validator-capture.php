@@ -1,6 +1,6 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -20,13 +20,13 @@ class NgeniusGatewayValidatorCapture
     {
         if (is_wp_error($response)) {
             return array(
-                'status' => "failed",
+                'status'      => "failed",
                 'orderStatus' => "cancelled",
-                'error'  =>  $response->get_error_message(),
-                'message'  =>  $response->get_error_message(),
+                'error'       => $response->get_error_message(),
+                'message'     => $response->get_error_message(),
             );
         } else {
-            if (! isset($response['result']) && ! is_array($response['result'])) {
+            if (!isset($response['result']) && !is_array($response['result'])) {
                 return false;
             } else {
                 return $response['result'];

@@ -10,7 +10,7 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
         $refunded_amt    = 0;
         $data            = array();
         $transaction_arr = array();
-        $embedded         = self::NGENIUS_EMBEDED;
+        $embedded        = self::NGENIUS_EMBEDED;
         $refund_stmt     = self::NGENIUS_REFUND;
         $cmp_refund      = 'cnp:refund';
         if (isset($response->$embedded->$refund_stmt)) {
@@ -49,6 +49,7 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
 
             return array_slice($transaction_arr, -2, 1)[0];
         }
+
         return "";
     }
 
@@ -79,6 +80,7 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
      * Processing of API response
      *
      * @param stdClass $response
+     *
      * @return array
      */
     protected function post_process(stdClass $response): array
@@ -86,13 +88,13 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
         if (isset($response->errors)) {
             return [
                 'result' => []
-                ];
+            ];
         } else {
             $refunded_data     = $this->get_refunded_amount($response);
             $transaction_arr   = $refunded_data['transaction_arr'];
             $refunded_amt      = $refunded_data['refunded_amount'] / 100;
             $last_refunded_amt = $refunded_data['last_refunded_amt'];
-            $captured_amt = $response->amount->value / 100;
+            $captured_amt      = $response->amount->value / 100;
 
             $transaction_id = $this->get_transaction_id($transaction_arr);
 
@@ -102,11 +104,11 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
 
             return [
                 'result' => [
-                    'captured_amt'   => $refunded_amt,
-                    'refunded_amt'   => $last_refunded_amt,
-                    'state'          => $state,
-                    'orderStatus'   => $order_status,
-                    'transaction_id' => $transaction_id,
+                    'captured_amt'          => $refunded_amt,
+                    'refunded_amt'          => $last_refunded_amt,
+                    'state'                 => $state,
+                    'orderStatus'           => $order_status,
+                    'transaction_id'        => $transaction_id,
                     'total_refunded_amount' => $refunded_amt,
                 ],
             ];

@@ -1,6 +1,6 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -16,9 +16,9 @@ use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
  */
 abstract class NgeniusGatewayHttpAbstract
 {
-    public const NGENIUS_EMBEDED = '_embedded';
-    public const NGENIUS_CAPTURE = 'cnp:capture';
-    public const NGENIUS_REFUND  = 'cnp:refund';
+    public const NGENIUS_EMBEDED     = '_embedded';
+    public const NGENIUS_CAPTURE     = 'cnp:capture';
+    public const NGENIUS_REFUND      = 'cnp:refund';
     public const NGENIUS_CUP_RESULTS = 'cnp:china_union_pay_results';
 
     /**

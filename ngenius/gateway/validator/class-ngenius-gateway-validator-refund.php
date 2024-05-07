@@ -1,6 +1,6 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -21,7 +21,7 @@ class NgeniusGatewayValidatorRefund
         if (is_wp_error($response)) {
             throw new InvalidArgumentException($response->get_error_message());
         } else {
-            if (! isset($response['result']) && ! is_array($response['result'])) {
+            if (!isset($response['result']) && !is_array($response['result'])) {
                 return false;
             } else {
                 return $response['result'];

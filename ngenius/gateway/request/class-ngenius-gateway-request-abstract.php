@@ -1,6 +1,6 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -37,6 +37,20 @@ abstract class NgeniusGatewayRequestAbstract
             'token'   => $this->config->get_token(),
             'request' => $this->get_build_array($order),
         ];
+    }
+
+    /**
+     * Gets custom order meta field string
+     *
+     * @param $order
+     *
+     * @return string
+     */
+    public function getCustomOrderFields($order): string
+    {
+        $metaKey = $this->config->get_custom_order_fields();
+
+        return $order->get_meta($metaKey, true);
     }
 
     /**

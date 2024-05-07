@@ -2,6 +2,6 @@
   "name": "ngenius/woocommerce",
   "type": "composer-plugin",
   "require": {
-    "ngenius/ngenius-common": "^1.0"
+    "ngenius/ngenius-common": "v1.0.8"
   }
 }
