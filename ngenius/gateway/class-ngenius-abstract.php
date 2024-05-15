@@ -1,14 +1,15 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
 $f = dirname(__DIR__, 1);
 require_once "$f/vendor/autoload.php";
 
-use \Ngenius\NgeniusCommon\NgeniusHTTPCommon;
-use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
+use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
+use Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
+use Ngenius\NgeniusCommon\Processor\RefundProcessor;
 
 require_once dirname(__FILE__) . '/config/class-ngenius-gateway-config.php';
 require_once dirname(__FILE__) . '/request/class-ngenius-gateway-request-token.php';
@@ -59,7 +60,7 @@ class NgeniusAbstract extends WC_Payment_Gateway
     public $supports;
     public $title;
     public $description;
-    public  $enabled;
+    public $enabled;
     public $environment;
     public $paymentAction;
     public $orderStatus;
@@ -72,11 +73,11 @@ class NgeniusAbstract extends WC_Payment_Gateway
      */
     public function __construct()
     {
-        $this->id                 = 'ngenius';
+        $this->id = 'ngenius';
         // URL of the icon that will be displayed on checkout page near your gateway name
-        $this->icon               = '';
-        $this->hasFields         = false; // in case you need a custom credit card form
-        $this->method_title       = 'N-Genius Payment Gateway';
+        $this->icon         = '';
+        $this->hasFields    = false; // in case you need a custom credit card form
+        $this->method_title = 'N-Genius Payment Gateway';
 
         // will be displayed on the options page
         $this->method_description = 'Payment Gateway from Network International Payment Solutions';
@@ -89,7 +90,7 @@ class NgeniusAbstract extends WC_Payment_Gateway
         include_once dirname(__FILE__) . '/settings-ngenius.php';
 
         // Method with all the options fields
-        $settingsNgenius = new SettingsNgenius();
+        $settingsNgenius   = new SettingsNgenius();
         $this->form_fields = $settingsNgenius->overrideFormFieldsVariable();
 
         // Load the settings.
@@ -101,16 +102,16 @@ class NgeniusAbstract extends WC_Payment_Gateway
             $this->id
         );
 
-        $this->title          = $this->get_option('title');
-        $this->description    = $this->get_option('description');
-        $this->enabled        = $this->get_option('enabled');
-        $this->environment    = $this->get_option('environment');
-        $this->paymentAction  = $this->get_option('payment_action');
-        $this->orderStatus    = $this->get_option('orderStatus');
-        $this->outletRef      = $this->get_option('outlet_ref');
+        $this->title         = $this->get_option('title');
+        $this->description   = $this->get_option('description');
+        $this->enabled       = $this->get_option('enabled');
+        $this->environment   = $this->get_option('environment');
+        $this->paymentAction = $this->get_option('payment_action');
+        $this->orderStatus   = $this->get_option('orderStatus');
+        $this->outletRef     = $this->get_option('outlet_ref');
         $this->apiKey        = $this->get_option('api_key');
-        $this->debug          = 'yes' === $this->get_option('debug', 'no');
-        self::$logEnabled     = $this->debug;
+        $this->debug         = 'yes' === $this->get_option('debug', 'no');
+        self::$logEnabled    = $this->debug;
     }
 
     /**
@@ -124,7 +125,7 @@ class NgeniusAbstract extends WC_Payment_Gateway
      */
     public static function get_instance()
     {
-        if (! isset(self::$instance)) {
+        if (!isset(self::$instance)) {
             self::$instance = new self();
         }
 
@@ -144,9 +145,9 @@ class NgeniusAbstract extends WC_Payment_Gateway
         include_once dirname(__FILE__) . '/http/class-ngenius-gateway-http-void.php';
         include_once dirname(__FILE__) . '/validator/class-ngenius-gateway-validator-void.php';
 
-        $requestClass  = new NgeniusGatewayRequestVoid($config);
-        $requestHttp   = new NgeniusGatewayHttpVoid();
-        $validator     = new NgeniusGatewayValidatorVoid();
+        $requestClass = new NgeniusGatewayRequestVoid($config);
+        $requestHttp  = new NgeniusGatewayHttpVoid();
+        $validator    = new NgeniusGatewayValidatorVoid();
 
         $requestBuild = $requestClass->build($orderItem);
 
@@ -190,11 +191,13 @@ class NgeniusAbstract extends WC_Payment_Gateway
             include_once dirname(__FILE__) . '/validator/class-ngenius-gateway-validator-refund.php';
             include_once dirname(__FILE__) . '/class-ngenius-gateway-payment.php';
 
-            $amount     = number_format((float)$amount, 2);
             $orderItem = $this->fetch_order($order_id);
-            $order      = wc_get_order($order_id);
 
-            $config      = new NgeniusGatewayConfig($this, $order);
+            ValueFormatter::formatCurrencyDecimals($orderItem->currency, $amount);
+
+            $order = wc_get_order($order_id);
+
+            $config     = new NgeniusGatewayConfig($this, $order);
             $tokenClass = new NgeniusGatewayRequestToken($config);
 
             if ($config->is_complete()) {
@@ -212,10 +215,10 @@ class NgeniusAbstract extends WC_Payment_Gateway
     {
         if ($token) {
             $config->set_token($token);
-            $requestClass   = new NgeniusGatewayRequestRefund($config);
-            $requestHttp    = new NgeniusGatewayHttpRefund();
-            $validator       = new NgeniusGatewayValidatorRefund();
-            $refundUrl      = $this->get_refund_url($orderItem->reference);
+            $requestClass = new NgeniusGatewayRequestRefund($config);
+            $requestHttp  = new NgeniusGatewayHttpRefund();
+            $validator    = new NgeniusGatewayValidatorRefund();
+            $refundUrl    = $this->get_refund_url($orderItem->reference);
 
             $requestBuild = $requestClass->build($orderItem, $amount, $refundUrl);
 
@@ -228,28 +231,35 @@ class NgeniusAbstract extends WC_Payment_Gateway
 
             $transferClass->setPaymentHeaders($token);
 
-            $response        = $requestHttp->place_request($transferClass);
+            $response = $requestHttp->place_request($transferClass);
 
-            $result          = $validator->validate($response);
+            $result         = $validator->validate($response);
             $responseResult = $this->validateRefundResult($result, $order, $orderItem);
             if ($responseResult) {
                 return true;
             }
         }
+
         return false;
     }
 
     public function validateRefundResult($result, $order, $orderItem)
     {
         if ($result) {
+            $currencyCode   = $orderItem->currency;
+            $capturedAmount = $result['captured_amt'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['captured_amt']) : $result['captured_amt'];
+            $refundedAmount = $result['refunded_amt'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['refunded_amt']) : $result['refunded_amt'];
+
+            ValueFormatter::formatCurrencyDecimals($currencyCode, $refundedAmount);
+
             $data                 = [];
             $data['status']       = $result['orderStatus'];
             $data['state']        = $result['state'];
-            $data['captured_amt'] = $result['captured_amt'];
+            $data['captured_amt'] = $capturedAmount;
             $this->updateData($data, array('nid' => $orderItem->nid));
-            $orderMessage = 'Refunded an amount ' . $orderItem->currency . $result['refunded_amt'];
+            $orderMessage  = 'Refunded an amount ' . $currencyCode . $refundedAmount;
             $this->message = 'Success! ' . $orderMessage . ' of an order #' . $orderItem->order_id;
-            $orderMessage .= '. Transaction ID: ' . $result['transaction_id'];
+            $orderMessage  .= '. Transaction ID: ' . $result['transaction_id'];
             $order->add_order_note($orderMessage);
             WC_Admin_Notices::add_custom_notice('ngenius', $this->message);
 
@@ -263,29 +273,15 @@ class NgeniusAbstract extends WC_Payment_Gateway
      */
     public function get_refund_url($orderRef)
     {
-        $payment = new NgeniusGatewayPayment();
+        $payment  = new NgeniusGatewayPayment();
         $response = $payment->get_response_api($orderRef);
 
         if (isset($response->errors)) {
             return $response->errors[0]->message;
         }
 
-        $cnpCapture = "cnp:capture";
-        $cnpRefund = 'cnp:refund';
-
         $payment = $response->_embedded->payment[0];
 
-        $refundUrl = "";
-        if (($payment->state == "PURCHASED" || $payment->state == "PARTIALLY_REFUNDED")
-            && isset($payment->_links->$cnpRefund->href)) {
-            $refundUrl = $payment->_links->$cnpRefund->href;
-        } elseif ($payment->state == "CAPTURED" &&
-            isset($payment->_embedded->$cnpCapture[0]->_links->$cnpRefund->href)) {
-            $refundUrl = $payment->_embedded->$cnpCapture[0]->_links->$cnpRefund->href;
-        } elseif (isset($payment->_embedded->$cnpCapture[0]->_links->$cnpRefund->href)) {
-            $refundUrl = $payment->_embedded->$cnpCapture[0]->_links->$cnpRefund->href;
-        }
-
-        return $refundUrl;
+        return RefundProcessor::extractUrl($payment);
     }
 }

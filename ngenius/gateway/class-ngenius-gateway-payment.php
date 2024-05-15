@@ -9,6 +9,7 @@ require_once "$f/vendor/autoload.php";
 
 use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
 use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
+use Ngenius\NgeniusCommon\Processor\ApiProcessor;
 
 /**
  * Ngenius_Gateway_Payment class.
@@ -23,8 +24,10 @@ class NgeniusGatewayPayment
     public const NGENIUS_CAPTURED   = 'CAPTURED';
     public const NGENIUS_PURCHASED  = 'PURCHASED';
     public const NGENIUS_FAILED     = 'FAILED';
+    public const NGENIUS_CANCELED   = 'CANCELED';
     public const NGENIUS_EMBEDED    = '_embedded';
     public const NGENIUS_LINKS      = '_links';
+    public const NGENIUS_AWAIT_3DS  = 'AWAIT_3DS';
 
     /**
      *
@@ -90,6 +93,12 @@ class NgeniusGatewayPayment
         $capture_id      = '';
         $captured_amt    = 0;
         $data_table_data = array();
+        $order_ref       = filter_input(INPUT_GET, 'ref', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $data            = $this->get_response_api($order_ref);
+        $result          = $this->objectToArray($data);
+
+        $apiProcessor = new ApiProcessor($result);
+        $apiProcessor->processPaymentAction($action, $this->ngeniusState);
         if (self::NGENIUS_FAILED !== $this->ngeniusState) {
             if (self::NGENIUS_STARTED !== $this->ngeniusState) {
                 if ($action == "AUTH") {
@@ -105,7 +114,6 @@ class NgeniusGatewayPayment
                 if ($config->get_default_complete_order_status() === "yes") {
                     $order->update_status('processing');
                 }
-
             } else {
                 $data_table['status'] = substr($this->orderStatus[0]['status'], 3);
             }
@@ -131,7 +139,7 @@ class NgeniusGatewayPayment
      *
      * @return $this|null
      */
-    public function process_order($payment_result, $order_item, $action)
+    public function process_order($payment_result, $order_item, $action, $abandoned_order = false)
     {
         $data_table = [];
         $order      = "";
@@ -139,13 +147,13 @@ class NgeniusGatewayPayment
             $payment_id = $this->get_payment_id($payment_result);
 
             $order = wc_get_order($order_item->order_id);
-            if ($order->get_id()) {
+            if ($order) {
                 list($data_table_data) = $this->update_order_status($action, $order, $payment_result);
                 $data_table                 = $data_table_data['data_table'];
                 $data_table['payment_id']   = $payment_id;
                 $data_table['captured_amt'] = $data_table_data['captured_amt'];
                 $data_table['capture_id']   = $data_table_data['capture_id'];
-                $this->update_table($data_table, $order_item->nid);
+                $this->update_table($data_table, $order_item->nid, $abandoned_order);
 
                 return $order;
             } else {
@@ -251,7 +259,7 @@ class NgeniusGatewayPayment
         $token       = $token_class->get_access_token();
 
         if ($token && !is_wp_error($token)) {
-            $fetch_class    = new NgeniusGatewayHttpFetch();
+            $fetch_class = new NgeniusGatewayHttpFetch();
 
             $transfer_class = new NgeniusHttpTransfer(
                 $config->get_fetch_request_url($order_ref),
@@ -282,7 +290,7 @@ class NgeniusGatewayPayment
             if (isset($result->errors)) {
                 return false;
             } else {
-                $embedded             = self::NGENIUS_EMBEDED;
+                $embedded           = self::NGENIUS_EMBEDED;
                 $this->ngeniusState = $result->$embedded->payment[0]->state ?? '';
 
                 return $result;
@@ -312,10 +320,13 @@ class NgeniusGatewayPayment
      *
      * @return bool true
      */
-    public function update_table(array $data, int $nid): bool
+    public function update_table(array $data, int $nid, bool $abandoned_order): bool
     {
         global $wpdb;
-        $data['state'] = $this->ngeniusState;
+
+        if (!isset($data['state'])) {
+            $data['state'] = $abandoned_order ? self::NGENIUS_CANCELED : $this->ngeniusState;
+        }
 
         return $wpdb->update(NGENIUS_TABLE, $data, array('nid' => $nid));
     }
@@ -330,16 +341,25 @@ class NgeniusGatewayPayment
             "' AND payment_id='' AND DATE_ADD(created_at, INTERVAL 60 MINUTE) < NOW()"
         );
         $log         = [];
-        $embedded     = self::NGENIUS_EMBEDED;
+        $embedded    = self::NGENIUS_EMBEDED;
         if (is_array($order_items)) {
             foreach ($order_items as $order_item) {
+                $dataTable['state'] = 'CRON';
+                $this->update_table($dataTable, $order_item->nid, true);
+
                 $order_ref = $order_item->reference;
                 $result    = $this->get_response_api($order_ref);
                 if ($result && isset($result->$embedded->payment)) {
                     $action         = $result->action ?? '';
                     $payment_result = $result->$embedded->payment[0];
-                    $order          = $this->process_order($payment_result, $order_item, $action);
-                    $log[]          = $order->get_id();
+                    if ($payment_result->state == self::NGENIUS_STARTED
+                        || $payment_result->state == self::NGENIUS_AWAIT_3DS
+                    ) {
+                        $order = $this->process_order($payment_result, $order_item, $action, true);
+                    } else {
+                        $order = $this->process_order($payment_result, $order_item, $action);
+                    }
+                    $log[] = $order->get_id();
                 }
             }
 
@@ -347,5 +367,26 @@ class NgeniusGatewayPayment
         } else {
             return false;
         }
+    }
+
+    function objectToArray($obj)
+    {
+        if (is_object($obj)) {
+            // Convert object to array
+            $obj = (array)$obj;
+        }
+
+        if (is_array($obj)) {
+            $arr = [];
+            foreach ($obj as $key => $value) {
+                // Recursively convert nested objects
+                $arr[$key] = $this->objectToArray($value);
+            }
+
+            return $arr;
+        }
+
+        // Base case: return value if it's not an object or array
+        return $obj;
     }
 }

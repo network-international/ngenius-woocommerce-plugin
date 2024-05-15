@@ -255,4 +255,9 @@ class NgeniusGatewayConfig
     {
         return $this->gateway->get_option('curl_http_version') ?? "CURL_HTTP_VERSION_NONE";
     }
+
+    public function get_custom_order_fields(): string
+    {
+        return $this->gateway->get_option('customOrderFields') ?? "";
+    }
 }

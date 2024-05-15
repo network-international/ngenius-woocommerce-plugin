@@ -1,6 +1,6 @@
 <?php
 
-if (! defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -9,8 +9,8 @@ require_once "$f/vendor/autoload.php";
 
 require_once dirname(__FILE__) . '/class-ngenius-abstract.php';
 
-use \Ngenius\NgeniusCommon\NgeniusHTTPCommon;
-use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
+use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
+use Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
 use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 
 /**
@@ -57,7 +57,7 @@ class NgeniusGateway extends NgeniusAbstract
      */
     public static function get_instance(): NgeniusGateway
     {
-        if (! isset(self::$instance)) {
+        if (!isset(self::$instance)) {
             self::$instance = new self();
         }
 
@@ -86,7 +86,7 @@ class NgeniusGateway extends NgeniusAbstract
      */
     public function ngenius_cron_task()
     {
-        if (! wp_next_scheduled('ngenius_cron_order_update')) {
+        if (!wp_next_scheduled('ngenius_cron_order_update')) {
             wp_schedule_event(time(), 'hourly', 'ngenius_cron_order_update');
         }
         add_action('ngenius_cron_order_update', array($this, 'cron_order_update'));
@@ -107,7 +107,7 @@ class NgeniusGateway extends NgeniusAbstract
                 'woocommerce_update_options_payment_gateways_' . $this->id,
                 array($this, 'processAdminOptions')
             );
-            add_action('add_meta_boxes', array($this, 'ngenius_online_meta_boxes'));
+            add_action('add_meta_boxes', array($this, 'ngenius_online_meta_boxes'), 10, 2);
             add_action('save_post', array($this, 'ngenius_online_actions'));
         }
     }
@@ -172,7 +172,6 @@ class NgeniusGateway extends NgeniusAbstract
 
 
         if ($config->is_complete()) {
-
             $token = $token_class->get_access_token();
             if ($token && !is_wp_error($token)) {
                 $config->set_token($token);
@@ -188,7 +187,7 @@ class NgeniusGateway extends NgeniusAbstract
                 }
 
 
-                $validator      = new NgeniusGatewayValidatorResponse();
+                $validator = new NgeniusGatewayValidatorResponse();
 
                 $tokenRequest = $request_class->build($order);
 
@@ -235,8 +234,9 @@ class NgeniusGateway extends NgeniusAbstract
     /**
      * @throws Exception
      */
-    private function checkoutErrorThrow($message) {
-        throw new Exception( $message );
+    private function checkoutErrorThrow($message)
+    {
+        throw new Exception($message);
     }
 
     /**
@@ -386,17 +386,21 @@ class NgeniusGateway extends NgeniusAbstract
     /**
      * N-Genius Meta Boxes
      */
-    public function ngenius_online_meta_boxes()
+    public function ngenius_online_meta_boxes($post_type, $post)
     {
-        global $post;
-        $order_id       = $post->ID;
-        $payment_method = get_post_meta($order_id, '_payment_method', true);
+        $order_id = $post->ID;
+        $order    = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+
+        $payment_method = $order->get_meta('_payment_method', true);
         if ($this->id === $payment_method) {
             add_meta_box(
                 'ngenius-payment-actions',
                 __('N-Genius Payment Gateway', 'woocommerce'),
                 array($this, 'ngenius_online_meta_box_payment'),
-                'shop_order',
+                $post_type,
                 'side',
                 'high'
             );
@@ -406,18 +410,18 @@ class NgeniusGateway extends NgeniusAbstract
     /**
      * Generate the N-Genius payment meta box and echos the HTML
      */
-    public function ngenius_online_meta_box_payment()
+    public function ngenius_online_meta_box_payment($post)
     {
-        global $post;
         $order_id = $post->ID;
         $order    = wc_get_order($order_id);
-        if (! empty($order)) {
-            $order_item = $this->fetch_order($order_id);
-            $html       = '';
+        if (!empty($order)) {
+            $order_item    = $this->fetch_order($order_id);
+            $currency_code = $order_item->currency . ' ';
+            ValueFormatter::formatCurrencyDecimals(trim($currency_code), $order_item->amount);
+            $html = '';
             try {
-                $currency_code              = $order_item->currency . ' ';
-                $ngAuthorised              = "";
-                $ngAuthorisedAmount       = $currency_code . number_format($order_item->amount, 2);
+                $ngAuthorised            = "";
+                $ngAuthorisedAmount      = $currency_code . $order_item->amount;
                 $ngAuthorisedAmountLabel = __('Authorized:', 'woocommerce');
                 if ('ng-authorised' === $order_item->status) {
                     $ngAuthorised = <<<HTML
@@ -455,10 +459,12 @@ HTML;
 HTML;
                 }
 
-                $orderStatuses = NgeniusOrderStatuses::orderStatuses();
+                $orderStatuses  = NgeniusOrderStatuses::orderStatuses();
                 $ng_state       = __('Status:', 'woocommerce');
                 $ng_state_value = $order->get_status();
-                foreach ($orderStatuses as $status ) {
+
+                $itemState = $order_item->state;
+                foreach ($orderStatuses as $status) {
                     if ("wc-" . $ng_state_value === $status["status"]) {
                         $ng_state_value = $status["label"];
                     }
@@ -468,12 +474,12 @@ HTML;
                 $ng_payment_id       = $order_item->payment_id;
 
                 $ng_captured_label  = __('Captured:', 'woocommerce');
-                $ng_captured_amount = $currency_code . number_format($order_item->amount, 2);
+                $ng_captured_amount = $currency_code . $order_item->amount;
 
                 $ng_refunded_label  = __('Refunded:', 'woocommerce');
-                $ng_refunded_amount = $currency_code . number_format($refunded, 2);
+                $ng_refunded_amount = $currency_code . $refunded;
 
-                $html               = <<<HTML
+                $html = <<<HTML
                     <table>
                     <tr>
                         <td> $ng_state </td>
@@ -493,15 +499,18 @@ HTML;
 
 HTML;
                 // Don't display captured line on 'STARTED' and 'AUTHORISED' states
-                if ( $ng_state_value != 'STARTED' && $ng_state_value != 'AUTHORISED' ) {
-                    $html  .= <<<HTML
+                if ($itemState != 'STARTED'
+                    && $itemState != 'AUTHORISED'
+                    && $itemState != 'REVERSED'
+                ) {
+                    $html .= <<<HTML
                     <tr>
                         <td> $ng_captured_label </td>
 				        <td> $ng_captured_amount </td>
                     </tr>
 HTML;
                 }
-                $html  .= <<<HTML
+                $html .= <<<HTML
  </table>
  HTML;
                 echo ent2ncr($html);
@@ -516,7 +525,7 @@ HTML;
      *
      * @param int $post_id
      *
-     * @return null
+     * @return void
      */
     public function ngenius_online_actions($post_id)
     {
@@ -571,9 +580,9 @@ HTML;
         include_once dirname(__FILE__) . '/http/class-ngenius-gateway-http-capture.php';
         include_once dirname(__FILE__) . '/validator/class-ngenius-gateway-validator-capture.php';
 
-        $requestClass  = new NgeniusGatewayRequestCapture($config);
-        $requestHttp   = new NgeniusGatewayHttpCapture();
-        $validator      = new NgeniusGatewayValidatorCapture();
+        $requestClass = new NgeniusGatewayRequestCapture($config);
+        $requestHttp  = new NgeniusGatewayHttpCapture();
+        $validator    = new NgeniusGatewayValidatorCapture();
 
         $requestBuild = $requestClass->build($orderItem);
 
@@ -588,14 +597,22 @@ HTML;
 
         $response = $requestHttp->place_request($transferClass);
         $result   = $validator->validate($response);
+
+        $currencyCode = $orderItem->currency;
+
+        $capturedAmount = $result['captured_amt'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['captured_amt']) : $result['captured_amt'];
+        $totalCaptured  = $result['total_captured'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['total_captured']) : $result['total_captured'];
+
+        ValueFormatter::formatCurrencyDecimals($currencyCode, $capturedAmount);
+
         if ($result['status'] != "failed") {
             $data                 = [];
             $data['status']       = $result['orderStatus'];
             $data['state']        = $result['state'];
-            $data['captured_amt'] = $result['total_captured'];
+            $data['captured_amt'] = $totalCaptured;
             $data['capture_id']   = $result['transaction_id'];
             $this->updateData($data, array('nid' => $orderItem->nid));
-            $order_message = 'Captured an amount ' . $orderItem->currency . $result['captured_amt'];
+            $order_message = 'Captured an amount ' . $currencyCode . $capturedAmount;
             $this->message = 'Success! ' . $order_message . ' of an order #' . $orderItem->order_id;
             $order_message .= '. Transaction ID: ' . $result['transaction_id'];
             $order->payment_complete($result['transaction_id']);
