@@ -38,7 +38,7 @@ class NgeniusGatewayRequestRefund
     {
         $currencyCode = $order_item->currency;
 
-        ValueFormatter::formatCurrencyAmount($currencyCode, $amount);
+        $amount = ValueFormatter::floatToIntRepresentation($currencyCode, $amount);
 
         return [
             'token'   => $this->config->get_token(),
@@ -46,7 +46,7 @@ class NgeniusGatewayRequestRefund
                 'data'   => [
                     'amount'              => [
                         'currencyCode' => $currencyCode,
-                        'value'        => $amount * 100,
+                        'value'        => $amount,
                     ],
                     'merchantDefinedData' => [
                         'pluginName'    => 'woocommerce',

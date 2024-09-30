@@ -53,24 +53,24 @@
         },
         {
             "name": "ngenius/ngenius-common",
-            "version": "v1.0.8",
-            "version_normalized": "1.0.8.0",
+            "version": "v1.0.12",
+            "version_normalized": "1.0.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/network-international/ngenius-common.git",
-                "reference": "d9dc01ba2641b2b14e49c9376946ee42181618de"
+                "reference": "fcf6b32e6e8946f86ca87d7955d3d4b56d8f372e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/network-international/ngenius-common/zipball/d9dc01ba2641b2b14e49c9376946ee42181618de",
-                "reference": "d9dc01ba2641b2b14e49c9376946ee42181618de",
+                "url": "https://api.github.com/repos/network-international/ngenius-common/zipball/fcf6b32e6e8946f86ca87d7955d3d4b56d8f372e",
+                "reference": "fcf6b32e6e8946f86ca87d7955d3d4b56d8f372e",
                 "shasum": ""
             },
             "require": {
                 "megastruktur/phone-country-codes": "0.4",
                 "php": "^8.0"
             },
-            "time": "2024-03-18T03:16:31+00:00",
+            "time": "2024-08-26T13:41:32+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -92,7 +92,7 @@
             "homepage": "https://github.com/Ngenius/ngenius-common",
             "support": {
                 "issues": "https://github.com/network-international/ngenius-common/issues",
-                "source": "https://github.com/network-international/ngenius-common/tree/v1.0.8"
+                "source": "https://github.com/network-international/ngenius-common/tree/v1.0.12"
             },
             "install-path": "../ngenius/ngenius-common"
         }

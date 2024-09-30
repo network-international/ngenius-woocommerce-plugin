@@ -19,10 +19,15 @@ class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
     public function get_build_array($order)
     {
         $currencyCode = $order->get_currency();
-        $amount       = strval($order->get_total() * 100);
+        $amount       = ValueFormatter::floatToIntRepresentation($currencyCode, $order->get_total());
         $countryCode  = WC()->countries->get_country_calling_code($order->get_billing_country());
+        $debugMode = $this->config->get_debug_mode();
 
-        ValueFormatter::formatCurrencyAmount($currencyCode, $amount);
+        if ($debugMode === 'yes') {
+            $cancelUrl = wc_get_checkout_url();
+        }  else {
+            $cancelUrl = str_replace('&amp;', '&', $order->get_cancel_order_url());
+        }
 
         return [
             'data'   => [
@@ -34,7 +39,7 @@ class NgeniusGatewayRequestSale extends NgeniusGatewayRequestAbstract
                 'merchantAttributes'     => [
                     'redirectUrl'          => add_query_arg('wc-api', 'ngeniusonline', home_url('/')),
                     'skipConfirmationPage' => true,
-                    'cancelUrl'            => str_replace('&amp;', '&', $order->get_cancel_order_url()),
+                    'cancelUrl'            => $cancelUrl,
                     'cancelText'           => 'Continue Shopping'
                 ],
                 'merchantOrderReference' => $order->get_id(),

@@ -33,6 +33,7 @@ class RefundProcessor
                 $refund_url = $payment->_embedded->{$cnpCapture}[0]->_links->$cnpRefund->href;
             }
         }
+
         return $refund_url;
     }
 }

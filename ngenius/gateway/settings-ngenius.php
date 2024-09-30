@@ -171,10 +171,20 @@ class SettingsNgenius extends WC_Settings_API
                 'type'        => 'checkbox',
                 'label'       => __('Enable logging', 'woocommerce'),
                 'description' => sprintf(
+                    /* translators: %s: log file path */
                     __('Log file will be %s', 'woocommerce'),
                     '<code>' . WC_Log_Handler_File::get_log_file_path('ngenius') . '</code>'
                 ),
                 'default'     => 'yes',
+            ),
+            'debugMode'                     => array(
+                'title'       => __('Debug Mode', 'woocommerce'),
+                'type'        => 'checkbox',
+                'label'       => __('Enable debug mode', 'woocommerce'),
+                'description' => __(
+                    'Activate/deactivate debug mode'
+                ),
+                'default'     => 'no',
             )
         );
     }

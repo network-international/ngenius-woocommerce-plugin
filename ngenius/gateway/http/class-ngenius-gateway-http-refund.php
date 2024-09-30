@@ -1,5 +1,7 @@
 <?php
 
+use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
+
 /**
  * NgeniusGatewayHttpRefund class.
  */
@@ -26,7 +28,7 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
         if (isset($transaction_arr->state)
             && ('SUCCESS' === $transaction_arr->state || 'REQUESTED' === $transaction_arr->state)
             && isset($transaction_arr->amount->value)) {
-            $last_refunded_amt = $transaction_arr->amount->value / 100;
+            $last_refunded_amt = $transaction_arr->amount->value;
         }
 
         $data['refunded_amount']   = $refunded_amt;
@@ -73,7 +75,7 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
      */
     protected function pre_process(array $data): string
     {
-        return json_encode($data);
+        return wp_json_encode($data);
     }
 
     /**
@@ -92,9 +94,18 @@ class NgeniusGatewayHttpRefund extends NgeniusGatewayHttpAbstract
         } else {
             $refunded_data     = $this->get_refunded_amount($response);
             $transaction_arr   = $refunded_data['transaction_arr'];
-            $refunded_amt      = $refunded_data['refunded_amount'] / 100;
-            $last_refunded_amt = $refunded_data['last_refunded_amt'];
-            $captured_amt      = $response->amount->value / 100;
+            $refunded_amt      = ValueFormatter::intToFloatRepresentation(
+                $response->amount->currencyCode,
+                $refunded_data['refunded_amount']
+            );
+            $last_refunded_amt = ValueFormatter::intToFloatRepresentation(
+                $response->amount->currencyCode,
+                $refunded_data['last_refunded_amt']
+            );
+            $captured_amt      = ValueFormatter::intToFloatRepresentation(
+                $response->amount->currencyCode,
+                $response->amount->value
+            );
 
             $transaction_id = $this->get_transaction_id($transaction_arr);
 

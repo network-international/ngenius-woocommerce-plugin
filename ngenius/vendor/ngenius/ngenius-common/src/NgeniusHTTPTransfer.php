@@ -17,40 +17,47 @@ class NgeniusHTTPTransfer
      * @param array $data
      * @param array $headers
      */
-    public function __construct(string $url, string $httpVersion = "", string $method = "", array $data = [], array $headers = [])
-    {
-        $this->url = $url;
+    public function __construct(
+        string $url,
+        string $httpVersion = "",
+        string $method = "",
+        array $data = [],
+        array $headers = []
+    ) {
+        $this->url         = $url;
         $this->httpVersion = $httpVersion;
-        $this->headers = $headers;
-        $this->method = $method;
-        $this->data = $data;
+        $this->headers     = $headers;
+        $this->method      = $method;
+        $this->data        = $data;
     }
 
 
     /**
      * @param $key
+     *
      * @return void
      */
     public function setTokenHeaders($key): void
     {
         $this->setHeaders([
-            "Authorization: Basic $key",
-            "Content-Type:  application/vnd.ni-identity.v1+json",
-            "Content-Length: 0"
-        ]);
+                              "Authorization: Basic $key",
+                              "Content-Type:  application/vnd.ni-identity.v1+json",
+                              "Content-Length: 0"
+                          ]);
     }
 
     /**
      * @param $token
+     *
      * @return void
      */
     public function setPaymentHeaders($token): void
     {
         $this->setHeaders([
-            "Authorization: Bearer $token",
-            "Content-type: application/vnd.ni-payment.v2+json",
-            "Accept: application/vnd.ni-payment.v2+json"
-        ]);
+                              "Authorization: Bearer $token",
+                              "Content-type: application/vnd.ni-payment.v2+json",
+                              "Accept: application/vnd.ni-payment.v2+json"
+                          ]);
     }
 
     /**
@@ -135,8 +142,8 @@ class NgeniusHTTPTransfer
 
     public function build(array $requestData): void
     {
-        $this->url = $requestData["uri"];
+        $this->url    = $requestData["uri"];
         $this->method = $requestData["method"];
-        $this->data = $requestData["data"] ?? [];
+        $this->data   = $requestData["data"] ?? [];
     }
 }

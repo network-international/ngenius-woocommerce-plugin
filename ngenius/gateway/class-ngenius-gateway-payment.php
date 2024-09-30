@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 $f = dirname(__DIR__, 1);
 require_once "$f/vendor/autoload.php";
 
+use Automattic\WooCommerce\Admin\Overrides\Order;
 use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
 use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 use Ngenius\NgeniusCommon\Processor\ApiProcessor;
@@ -58,16 +59,24 @@ class NgeniusGatewayPayment
     {
         global $woocommerce;
         $redirect_url = wc_get_checkout_url();
+        $config       = new NgeniusGatewayConfig(new NgeniusGateway());
+
+        if ($config->get_debug_mode() === 'yes') {
+            wp_redirect($redirect_url);
+            exit();
+        }
+
         if ($order_ref) {
-            $result  = $this->get_response_api($order_ref);
-            $embeded = self::NGENIUS_EMBEDED;
+            $result        = $this->get_response_api($order_ref);
+            $responseArray = $this->objectToArray($result);
+            $embeded       = self::NGENIUS_EMBEDED;
             if ($result && isset($result->$embeded->payment) && is_array($result->$embeded->payment)) {
-                $action         = isset($result->action) ? $result->action : '';
-                $payment_result = $result->$embeded->payment[0];
-                $array          = $this->fetch_order("reference='" . $order_ref . "'");
-                $order_item     = reset($array);
-                $order          = $this->process_order($payment_result, $order_item, $action);
-                $redirect_url   = $order->get_checkout_order_received_url();
+                $apiProcessor = new ApiProcessor($responseArray);
+                $action       = isset($result->action) ? $result->action : '';
+                $array        = $this->fetch_order("reference='" . $order_ref . "'");
+                $order_item   = reset($array);
+                $order        = $this->process_order($apiProcessor, $order_item, $action);
+                $redirect_url = $order->get_checkout_order_received_url();
             }
             wp_redirect($redirect_url);
             exit();
@@ -77,46 +86,31 @@ class NgeniusGatewayPayment
         }
     }
 
-    public function get_payment_id($payment_result)
-    {
-        $payment_id = '';
-        if (isset($payment_result->_id)) {
-            $payment_id_arr = explode(':', $payment_result->_id);
-            $payment_id     = end($payment_id_arr);
-        }
-
-        return $payment_id;
-    }
-
-    public function update_order_status($action, $order, $payment_result)
+    public function update_order_status($action, $order, ApiProcessor $apiProcessor)
     {
         $capture_id      = '';
         $captured_amt    = 0;
         $data_table_data = array();
-        $order_ref       = filter_input(INPUT_GET, 'ref', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $data            = $this->get_response_api($order_ref);
-        $result          = $this->objectToArray($data);
 
-        $apiProcessor = new ApiProcessor($result);
         $apiProcessor->processPaymentAction($action, $this->ngeniusState);
-        if (self::NGENIUS_FAILED !== $this->ngeniusState) {
-            if (self::NGENIUS_STARTED !== $this->ngeniusState) {
-                if ($action == "AUTH") {
-                    $this->order_authorize($order);
-                } elseif ($action == "SALE" || $action == "PURCHASE") {
-                    echo "update_status";
-                    list($captured_amt, $capture_id, $order, $sendInvoice) = $this->order_sale($order, $payment_result);
-                }
-                $data_table['status'] = $order->get_status();
 
-                $config = new NgeniusGatewayConfig(new NgeniusGateway());
-
-                if ($config->get_default_complete_order_status() === "yes") {
-                    $order->update_status('processing');
-                }
-            } else {
-                $data_table['status'] = substr($this->orderStatus[0]['status'], 3);
+        if ($apiProcessor->isPaymentConfirmed()) {
+            if ($action == "AUTH") {
+                $this->order_authorize($order);
+            } elseif ($action == "SALE" || $action == "PURCHASE") {
+                list($captured_amt, $capture_id, $order, $sendInvoice) = $this->order_sale($order, $apiProcessor);
             }
+            $data_table['status'] = $order->get_status();
+
+            $config = new NgeniusGatewayConfig(new NgeniusGateway());
+
+            if ($config->get_default_complete_order_status() === "yes") {
+                $order->update_status('processing');
+            }
+        } elseif (self::NGENIUS_STARTED == $this->ngeniusState) {
+            $data_table['status'] = substr($this->orderStatus[0]['status'], 3);
+            $order->update_status($this->orderStatus[2]['status'], 'The transaction has been canceled.');
+            $order->update_status('failed');
         } else {
             $order->update_status($this->orderStatus[2]['status'], 'The transaction has been failed.');
             $order->update_status('failed');
@@ -133,22 +127,22 @@ class NgeniusGatewayPayment
     /**
      * Process Order.
      *
-     * @param array $payment_result
+     * @param array $paymentResult
      * @param object $order_item
      * @param string $action
      *
      * @return $this|null
      */
-    public function process_order($payment_result, $order_item, $action, $abandoned_order = false)
+    public function process_order(ApiProcessor $apiProcessor, $order_item, $action, $abandoned_order = false)
     {
         $data_table = [];
         $order      = "";
         if ($order_item->order_id) {
-            $payment_id = $this->get_payment_id($payment_result);
+            $payment_id = $apiProcessor->getPaymentId();
 
             $order = wc_get_order($order_item->order_id);
             if ($order) {
-                list($data_table_data) = $this->update_order_status($action, $order, $payment_result);
+                list($data_table_data) = $this->update_order_status($action, $order, $apiProcessor);
                 $data_table                 = $data_table_data['data_table'];
                 $data_table['payment_id']   = $payment_id;
                 $data_table['captured_amt'] = $data_table_data['captured_amt'];
@@ -158,6 +152,7 @@ class NgeniusGatewayPayment
                 return $order;
             } else {
                 $order = new WP_Error('ngenius_error', 'Order Not Found');
+                wc_get_logger()->debug("N-GENIUS: Platform order not found");
             }
         }
 
@@ -167,7 +162,7 @@ class NgeniusGatewayPayment
     /**
      * Order Authorize.
      *
-     * @param object $order
+     * @param Order $order
      *
      * @return null
      */
@@ -185,27 +180,22 @@ class NgeniusGatewayPayment
      * Order Sale.
      *
      * @param object $order
-     * @param array $payment_result
+     * @param array $paymentResult
      *
      * @return null|array
      */
-    public function order_sale($order, $payment_result)
+    public function order_sale($order, ApiProcessor $apiProcessor)
     {
+        $paymentResult = $apiProcessor->getPaymentResult();
+
         if (self::NGENIUS_CAPTURED === $this->ngeniusState) {
             $transaction_id = '';
             $embeded        = self::NGENIUS_EMBEDED;
             $capture        = "cnp:capture";
             $links          = self::NGENIUS_LINKS;
             $refund         = "cnp:refund";
-            if (isset($payment_result->$embeded->$capture[0])) {
-                $last_transaction = $payment_result->$embeded->$capture[0];
-                if (isset($last_transaction->$links->self->href)) {
-                    $transaction_arr = explode('/', $last_transaction->$links->self->href);
-                    $transaction_id  = end($transaction_arr);
-                } elseif ($last_transaction->$links->$refund->href) {
-                    $transaction_arr = explode('/', $last_transaction->$links->$refund->href);
-                    $transaction_id  = $transaction_arr[count($transaction_arr) - 2];
-                }
+            if (isset($paymentResult[$embeded][$capture][0])) {
+                $transaction_id = $apiProcessor->getTransactionId();
             }
             $message = 'Captured Amount: ' . $order->get_formatted_order_total(
                 ) . ' | Transaction ID: ' . $transaction_id;
@@ -230,10 +220,33 @@ class NgeniusGatewayPayment
             $order->payment_complete($transaction_id);
             $order->update_status($this->orderStatus[3]['status']);
             $order->add_order_note($message);
-            $emailer = new WC_Emails();
-            $emailer->customer_invoice($order);
+
+            $this->sendCustomerInvoice($order);
 
             return array($order->get_total(), $transaction_id, $order, false);
+        }
+    }
+
+    /**
+     * @param $order
+     *
+     * @return void
+     */
+    public function sendCustomerInvoice($order): void
+    {
+        if (!class_exists('WC_Emails')) {
+            return;
+        }
+
+        if (!$order) {
+            return;
+        }
+
+        $mailer = WC()->mailer(); // Get the WooCommerce mailer
+        $mails  = $mailer->get_emails(); // Get all the email classes
+
+        if (isset($mails['WC_Email_Customer_Invoice'])) {
+            $mails['WC_Email_Customer_Invoice']->trigger($order->get_id());
         }
     }
 
@@ -285,7 +298,7 @@ class NgeniusGatewayPayment
     public function result_validator($result)
     {
         if (is_wp_error($result)) {
-            throw new InvalidArgumentException($result->get_error_message());
+            throw new InvalidArgumentException(wp_kses_post($result->get_error_message()));
         } else {
             if (isset($result->errors)) {
                 return false;
@@ -309,7 +322,24 @@ class NgeniusGatewayPayment
     {
         global $wpdb;
 
-        return $wpdb->get_results(sprintf('SELECT * FROM %s WHERE %s ORDER BY `nid` DESC', NGENIUS_TABLE, $where));
+        // Create a unique cache key based on the query parameters
+        $cache_key = 'fetch_order_' . md5($where);
+        $cache_group = 'ngenius_orders';
+
+        // Try to get the cached result
+        $cached_result = wp_cache_get($cache_key, $cache_group);
+
+        if (false !== $cached_result) {
+            return $cached_result;
+        }
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $results = $wpdb->get_results(sprintf('SELECT * FROM %s WHERE %s ORDER BY `nid` DESC', NGENIUS_TABLE, $where));
+
+        // Cache the result
+        wp_cache_set($cache_key, $results, $cache_group, 3600); // Cache for 1 hour (3600 seconds)
+
+        return $results;
     }
 
     /**
@@ -324,11 +354,23 @@ class NgeniusGatewayPayment
     {
         global $wpdb;
 
+        // Generate a unique cache key for the given nid
+        $cache_key = 'ngenius_order_' . $nid;
+
         if (!isset($data['state'])) {
             $data['state'] = $abandoned_order ? self::NGENIUS_CANCELED : $this->ngeniusState;
         }
 
-        return $wpdb->update(NGENIUS_TABLE, $data, array('nid' => $nid));
+        // Perform the update operation
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $updated = $wpdb->update(NGENIUS_TABLE, $data, array('nid' => $nid));
+
+        // If the update is successful, delete the cache for this key
+        if (false !== $updated) {
+            wp_cache_delete($cache_key, 'ngenius_orders');
+        }
+
+        return false !== $updated;
     }
 
     /**
@@ -336,37 +378,60 @@ class NgeniusGatewayPayment
      */
     public function order_update(): bool|string
     {
+        wc_get_logger()->debug("N-GENIUS: Cron started");
+
         $order_items = $this->fetch_order(
             "state = '" . self::NGENIUS_STARTED .
             "' AND payment_id='' AND DATE_ADD(created_at, INTERVAL 60 MINUTE) < NOW()"
         );
         $log         = [];
         $embedded    = self::NGENIUS_EMBEDED;
+        $cronSuccess = false;
         if (is_array($order_items)) {
+            wc_get_logger()->debug("N-GENIUS: Found " . count($order_items) . " unprocessed order(s)");
+            $counter = 0;
+
             foreach ($order_items as $order_item) {
-                $dataTable['state'] = 'CRON';
-                $this->update_table($dataTable, $order_item->nid, true);
-
-                $order_ref = $order_item->reference;
-                $result    = $this->get_response_api($order_ref);
-                if ($result && isset($result->$embedded->payment)) {
-                    $action         = $result->action ?? '';
-                    $payment_result = $result->$embedded->payment[0];
-                    if ($payment_result->state == self::NGENIUS_STARTED
-                        || $payment_result->state == self::NGENIUS_AWAIT_3DS
-                    ) {
-                        $order = $this->process_order($payment_result, $order_item, $action, true);
-                    } else {
-                        $order = $this->process_order($payment_result, $order_item, $action);
-                    }
-                    $log[] = $order->get_id();
+                if ($counter >= 5) {
+                    wc_get_logger()->debug("N-GENIUS: Breaking loop at 5 orders to avoid timeout");
+                    break;
                 }
-            }
 
-            return json_encode($log);
-        } else {
-            return false;
+                try {
+                    wc_get_logger()->debug("N-GENIUS: Processing order #" . $order_item->order_id);
+
+                    $dataTable['state'] = 'CRON';
+                    $this->update_table($dataTable, $order_item->nid, true);
+
+                    $order_ref     = $order_item->reference;
+                    $result        = $this->get_response_api($order_ref);
+                    $responseArray = $this->objectToArray($result);
+
+                    if ($result && isset($result->$embedded->payment) && $responseArray) {
+                        $apiProcessor = new ApiProcessor($responseArray);
+                        wc_get_logger()->debug("N-GENIUS: State is " . $order_item->state);
+                        $action = $result->action ?? '';
+
+                        if ($apiProcessor->isPaymentAbandoned()) {
+                            $order = $this->process_order($apiProcessor, $order_item, $action, true);
+                        } else {
+                            $order = $this->process_order($apiProcessor, $order_item, $action);
+                        }
+
+                        $log[] = $order->get_id();
+                    } else {
+                        wc_get_logger()->debug("N-GENIUS: Payment result not found");
+                    }
+                } catch (Exception $e) {
+                    wc_get_logger()->debug("N-GENIUS: Exception " . $e->getMessage());
+                }
+                $counter++;
+            }
+            $cronSuccess = wp_json_encode($log);
         }
+        wc_get_logger()->debug("N-GENIUS: Cron ended");
+
+        return $cronSuccess;
     }
 
     function objectToArray($obj)

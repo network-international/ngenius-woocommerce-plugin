@@ -7,6 +7,7 @@ class NgeniusHTTPCommon
 
     /**
      * @param NgeniusHTTPTransfer $ngeniusHTTPTransfer
+     *
      * @return string|bool
      */
     public static function placeRequest(NgeniusHTTPTransfer $ngeniusHTTPTransfer): string|bool
@@ -21,27 +22,27 @@ class NgeniusHTTPCommon
             default => CURL_HTTP_VERSION_NONE,
         };
 
-        $ch = curl_init();
-        $curlConfig = array(
-            CURLOPT_URL => $ngeniusHTTPTransfer->getUrl(),
-            CURLOPT_HTTPHEADER => $ngeniusHTTPTransfer->getHeaders(),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTP_VERSION => $httpVersion,
-            CURLOPT_CONNECTTIMEOUT => 0,
-            CURLOPT_TIMEOUT => 400,
-        );
-
-        $data = $ngeniusHTTPTransfer->getData();
+        $data   = $ngeniusHTTPTransfer->getData();
         $method = $ngeniusHTTPTransfer->getMethod();
+
+        $ch         = curl_init();
+        $curlConfig = array(
+            CURLOPT_URL            => $ngeniusHTTPTransfer->getUrl(),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING       => '',
+            CURLOPT_MAXREDIRS      => 10,
+            CURLOPT_TIMEOUT        => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION   => $httpVersion,
+            CURLOPT_CUSTOMREQUEST  => $method,
+            CURLOPT_HTTPHEADER     => $ngeniusHTTPTransfer->getHeaders()
+        );
 
         if (!empty($data)) {
             $curlConfig[CURLOPT_POSTFIELDS] = json_encode($data);
         }
 
-        if($method === "POST") {
-            $curlConfig[CURLOPT_POST] = true;
-        }
-        elseif ($method === "PUT") {
+        if ($method === "PUT") {
             $curlConfig[CURLOPT_PUT] = true;
         }
 

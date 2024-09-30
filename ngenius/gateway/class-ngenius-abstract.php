@@ -67,6 +67,7 @@ class NgeniusAbstract extends WC_Payment_Gateway
     public $outletRef;
     public $apiKey;
     protected bool $debug;
+    public $debugMode;
 
     /**
      * Constructor for the gateway.
@@ -96,10 +97,10 @@ class NgeniusAbstract extends WC_Payment_Gateway
         // Load the settings.
         $this->init_settings();
 
-        $this->method_title       = __('N-Genius', $this->id);
+        $this->method_title       = __('N-Genius', 'ngenius');
         $this->method_description = __(
             'N-Genius works by sending the customer to N-Genius to complete their payment.',
-            $this->id
+            'ngenius'
         );
 
         $this->title         = $this->get_option('title');
@@ -111,7 +112,9 @@ class NgeniusAbstract extends WC_Payment_Gateway
         $this->outletRef     = $this->get_option('outlet_ref');
         $this->apiKey        = $this->get_option('api_key');
         $this->debug         = 'yes' === $this->get_option('debug', 'no');
-        self::$logEnabled    = $this->debug;
+        $this->debugMode     = $this->get_option('debugMode');
+
+        self::$logEnabled = $this->debug;
     }
 
     /**
@@ -193,8 +196,6 @@ class NgeniusAbstract extends WC_Payment_Gateway
 
             $orderItem = $this->fetch_order($order_id);
 
-            ValueFormatter::formatCurrencyDecimals($orderItem->currency, $amount);
-
             $order = wc_get_order($order_id);
 
             $config     = new NgeniusGatewayConfig($this, $order);
@@ -247,8 +248,8 @@ class NgeniusAbstract extends WC_Payment_Gateway
     {
         if ($result) {
             $currencyCode   = $orderItem->currency;
-            $capturedAmount = $result['captured_amt'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['captured_amt']) : $result['captured_amt'];
-            $refundedAmount = $result['refunded_amt'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['refunded_amt']) : $result['refunded_amt'];
+            $capturedAmount = $result['captured_amt'];
+            $refundedAmount = $result['refunded_amt'];
 
             ValueFormatter::formatCurrencyDecimals($currencyCode, $refundedAmount);
 
@@ -259,7 +260,7 @@ class NgeniusAbstract extends WC_Payment_Gateway
             $this->updateData($data, array('nid' => $orderItem->nid));
             $orderMessage  = 'Refunded an amount ' . $currencyCode . $refundedAmount;
             $this->message = 'Success! ' . $orderMessage . ' of an order #' . $orderItem->order_id;
-            $orderMessage  .= '. Transaction ID: ' . $result['transaction_id'];
+            $orderMessage  .= ' | Transaction ID: ' . $result['transaction_id'];
             $order->add_order_note($orderMessage);
             WC_Admin_Notices::add_custom_notice('ngenius', $this->message);
 
