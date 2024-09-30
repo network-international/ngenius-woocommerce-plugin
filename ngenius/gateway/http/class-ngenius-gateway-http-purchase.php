@@ -14,6 +14,6 @@ class NgeniusGatewayHttpPurchase extends NgeniusGatewayHttpAbstract
      */
     protected function pre_process(array $data): string
     {
-        return json_encode($data);
+        return wp_json_encode($data);
     }
 }

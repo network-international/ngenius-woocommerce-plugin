@@ -108,7 +108,188 @@ class NgeniusGateway extends NgeniusAbstract
                 array($this, 'processAdminOptions')
             );
             add_action('add_meta_boxes', array($this, 'ngenius_online_meta_boxes'), 10, 2);
-            add_action('save_post', array($this, 'ngenius_online_actions'));
+            add_action('woocommerce_order_action_ngenius_capture', array($this, 'ngenius_capture_order_action'), 10, 1);
+            add_action('woocommerce_order_action_ngenius_void', array($this, 'ngenius_void_order_action'), 10, 1);
+            add_action('woocommerce_order_actions', array($this, 'wc_add_order_meta_box_action'), 1, 2);
+
+        }
+    }
+
+    public function wc_add_order_meta_box_action($actions, $order)
+    {
+        $order_item    = $this->fetch_order($order->get_id());
+
+        if ($order_item && 'ng-authorised' === $order_item->status) {
+            $actions['ngenius_capture'] = __('Capture N-Genius Online', 'ngenius');
+            $actions['ngenius_void']    = __('Void N-Genius Online', 'ngenius');
+        }
+
+        return $actions;
+    }
+
+    public function ngenius_capture_order_action($order)
+    {
+        $ngenius_state = ['ngenius_capture' => true];
+        $this->ngeniusAction($order, $ngenius_state);
+    }
+
+    public function ngenius_void_order_action($order)
+    {
+        $ngenius_state = ['ngenius_void' => true];
+        $this->ngeniusAction($order, $ngenius_state);
+    }
+
+    /**
+     * Handle actions on order page
+     *
+     * @param $order
+     *
+     * @return void
+     */
+    public function ngeniusAction($order, $ngenius_state): void
+    {
+        $this->message = '';
+            WC_Admin_Notices::remove_all_notices();
+            $orderID    = $order->get_id();
+            $order_item = $this->fetch_order($orderID);
+
+            if ($order_item) {
+                $config      = new NgeniusGatewayConfig($this, $order);
+                $token_class = new NgeniusGatewayRequestToken($config);
+
+                $this->validate_complete($config, $token_class, $order, $order_item, $ngenius_state);
+            } else {
+                $this->message = 'Order #' . $orderID . ' not found.';
+                WC_Admin_Notices::add_custom_notice('ngenius', $this->message);
+            }
+            add_filter('redirect_post_location', array($this, 'add_notice_query_var'), 99);
+    }
+
+    /**
+     * N-Genius Meta Boxes
+     */
+    public function ngenius_online_meta_boxes($post_type, $post)
+    {
+        $order_id = $post->ID;
+        $order    = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+
+        $payment_method = $order->get_meta('_payment_method', true);
+        if ($this->id === $payment_method) {
+            add_meta_box(
+                'ngenius-payment-actions',
+                __('N-Genius Payment Gateway', 'woocommerce'),
+                array($this, 'ngenius_online_meta_box_payment'),
+                $post_type,
+                'side',
+                'high'
+            );
+        }
+    }
+
+    /**
+     * Generate the N-Genius payment meta box and echos the HTML
+     */
+    public function ngenius_online_meta_box_payment($post)
+    {
+        $order_id = $post->ID;
+        $order    = wc_get_order($order_id);
+        if (!empty($order)) {
+            $order_item    = $this->fetch_order($order_id);
+            $currency_code = $order_item->currency . ' ';
+            ValueFormatter::formatCurrencyDecimals(trim($currency_code), $order_item->amount);
+            $html = '';
+            try {
+                $ngAuthorised            = "";
+                $ngAuthorisedAmount      = $currency_code . $order_item->amount;
+                $ngAuthorisedAmountLabel = __('Authorized:', 'woocommerce');
+                if ('ng-authorised' === $order_item->status) {
+                    $ngAuthorised = <<<HTML
+                        <tr>
+                            <td> $ngAuthorisedAmountLabel </td>
+                            <td> $ngAuthorisedAmount </td>
+                        </tr>
+HTML;
+                }
+                $refunded = 0;
+                if ('ng-full-refunded' === $order_item->status || 'ng-part-refunded' === $order_item->status ||
+                    'refunded' === $order_item->status) {
+                    $refunds = $order->get_refunds();
+                    foreach ($refunds as $refund) {
+                        $refunded += (double)($refund->get_data()["amount"]);
+                    }
+                }
+
+                $ngAuthorised2 = "";
+
+                $orderStatuses  = NgeniusOrderStatuses::orderStatuses();
+                $ng_state       = __('Status:', 'woocommerce');
+                $ng_state_value = $order->get_status();
+
+                $itemState = $order_item->state;
+                foreach ($orderStatuses as $status) {
+                    if ("wc-" . $ng_state_value === $status["status"]) {
+                        $ng_state_value = $status["label"];
+                    }
+                }
+
+                $ng_payment_id_label = __('Payment_ID:', 'woocommerce');
+                $ng_payment_id       = $order_item->payment_id;
+
+                $ng_captured_label  = __('Captured:', 'woocommerce');
+                $ng_captured_amount = $currency_code . $order_item->amount;
+
+                $ng_refunded_label  = __('Refunded:', 'woocommerce');
+                $ng_refunded_amount = $currency_code . $refunded;
+
+                $html = <<<HTML
+                    <table>
+                    <tr>
+                        <td> $ng_state </td>
+                        <td> $ng_state_value </td>
+                    </tr>
+                    <tr>
+                        <td> $ng_payment_id_label </td>
+                        <td> $ng_payment_id </td>
+                    </tr>
+                    $ngAuthorised
+                 
+                    <tr>
+				        <td> $ng_refunded_label </td>
+				        <td> $ng_refunded_amount </td>
+				    </tr>
+				    $ngAuthorised2
+
+HTML;
+                // Don't display captured line on 'STARTED' and 'AUTHORISED' states
+                if ($itemState != 'STARTED'
+                    && $itemState != 'AUTHORISED'
+                    && $itemState != 'REVERSED'
+                ) {
+                    $html .= <<<HTML
+                    <tr>
+                        <td> $ng_captured_label </td>
+				        <td> $ng_captured_amount </td>
+                    </tr>
+HTML;
+                }
+                $html .= <<<HTML
+ </table>
+ HTML;
+
+                if ('ng-authorised' === $order_item->status) {
+                    $html .= <<<HTML
+ <hr>
+ <p style="color: gray;">Void and capture moved to order actions.</p>
+ HTML;
+                }
+
+                echo wp_kses_post($html);
+            } catch (Exception $e) {
+                throw new InvalidArgumentException(wp_kses_post($e->getMessage()));
+            }
         }
     }
 
@@ -236,7 +417,7 @@ class NgeniusGateway extends NgeniusAbstract
      */
     private function checkoutErrorThrow($message)
     {
-        throw new Exception($message);
+        throw new Exception(wp_kses_post($message));
     }
 
     /**
@@ -251,17 +432,33 @@ class NgeniusGateway extends NgeniusAbstract
     {
         global $wpdb;
         global $wp_session;
-        $wpdb->replace(
-            NGENIUS_TABLE,
-            array_merge(
-                $wp_session['ngenius'],
-                array(
-                    'order_id' => $order->get_id(),
-                    'currency' => $order->get_currency(),
-                    'amount'   => $order->get_total(),
-                )
+
+        $order_id = $order->get_id();
+        $cache_key = 'ngenius_order_' . $order_id;
+
+        // Prepare the data to be saved
+        $data = array_merge(
+            $wp_session['ngenius'],
+            array(
+                'order_id' => $order_id,
+                'currency' => $order->get_currency(),
+                'amount'   => $order->get_total(),
             )
         );
+
+        // Check if the data is already cached
+        $cached_data = wp_cache_get($cache_key, 'ngenius');
+
+        if ($cached_data === false) {
+            // Data not cached, perform the database operation and cache the data
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+            $wpdb->replace(NGENIUS_TABLE, $data);
+
+            // Cache the data
+            wp_cache_set($cache_key, $data, 'ngenius');
+        } else {
+            // Data is already cached, no need to perform the database operation
+        }
     }
 
     /**
@@ -275,7 +472,18 @@ class NgeniusGateway extends NgeniusAbstract
     public function updateData(array $data, array $where): void
     {
         global $wpdb;
-        $wpdb->update(NGENIUS_TABLE, $data, $where);
+
+        // Define a unique cache key based on the update data and conditions
+        $cache_key = 'ngenius_' . md5(serialize($where));
+
+        // Perform the database update
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery , WordPress.DB.DirectDatabaseQuery.NoCaching
+        $updated = $wpdb->update(NGENIUS_TABLE, $data, $where);
+
+        // If the update is successful, update the cache
+        if ($updated !== false) {
+            wp_cache_set($cache_key, $data, 'ngenius_cache');
+        }
     }
 
     /**
@@ -347,8 +555,10 @@ class NgeniusGateway extends NgeniusAbstract
     {
         include_once plugin_dir_path(__FILE__) . '/class-ngenius-gateway-payment.php';
         $payment = new NgeniusGatewayPayment();
-        if ($payment->order_update()) {
-            $this->log('Cron updated the orders: ' . $payment->order_update());
+
+        $cronSuccess = $payment->order_update();
+        if ($cronSuccess) {
+            $this->log('Cron updated the orders: ' . $cronSuccess);
         }
     }
 
@@ -380,183 +590,33 @@ class NgeniusGateway extends NgeniusAbstract
     {
         global $wpdb;
 
-        return $wpdb->get_row(sprintf('SELECT * FROM %s WHERE order_id=%d', NGENIUS_TABLE, $order_id));
-    }
+        // Define a unique cache key
+        $cache_key = 'ngenius_order_' . $order_id;
 
-    /**
-     * N-Genius Meta Boxes
-     */
-    public function ngenius_online_meta_boxes($post_type, $post)
-    {
-        $order_id = $post->ID;
-        $order    = wc_get_order($order_id);
-        if (!$order) {
-            return;
+        // Try to get the order data from cache
+        $order = wp_cache_get($cache_key, 'ngenius_orders');
+
+        // If cache miss, query the database
+        if ($order === false) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery
+            $order = $wpdb->get_row(sprintf('SELECT * FROM %s WHERE order_id=%d', NGENIUS_TABLE, $order_id));
+
+            // Store the result in the cache
+            wp_cache_set($cache_key, $order, 'ngenius_orders', 3600); // Cache for 1 hour
         }
 
-        $payment_method = $order->get_meta('_payment_method', true);
-        if ($this->id === $payment_method) {
-            add_meta_box(
-                'ngenius-payment-actions',
-                __('N-Genius Payment Gateway', 'woocommerce'),
-                array($this, 'ngenius_online_meta_box_payment'),
-                $post_type,
-                'side',
-                'high'
-            );
-        }
+        return $order;
     }
 
-    /**
-     * Generate the N-Genius payment meta box and echos the HTML
-     */
-    public function ngenius_online_meta_box_payment($post)
-    {
-        $order_id = $post->ID;
-        $order    = wc_get_order($order_id);
-        if (!empty($order)) {
-            $order_item    = $this->fetch_order($order_id);
-            $currency_code = $order_item->currency . ' ';
-            ValueFormatter::formatCurrencyDecimals(trim($currency_code), $order_item->amount);
-            $html = '';
-            try {
-                $ngAuthorised            = "";
-                $ngAuthorisedAmount      = $currency_code . $order_item->amount;
-                $ngAuthorisedAmountLabel = __('Authorized:', 'woocommerce');
-                if ('ng-authorised' === $order_item->status) {
-                    $ngAuthorised = <<<HTML
-                        <tr>
-                            <td> $ngAuthorisedAmountLabel </td>
-                            <td> $ngAuthorisedAmount </td>
-                        </tr>
-HTML;
-                }
-                $refunded = 0;
-                if ('ng-full-refunded' === $order_item->status || 'ng-part-refunded' === $order_item->status ||
-                    'refunded' === $order_item->status) {
-                    $refunds = $order->get_refunds();
-                    foreach ($refunds as $refund) {
-                        $refunded += (double)($refund->get_data()["amount"]);
-                    }
-                }
-
-                $ngAuthorised2 = "";
-                if ('ng-authorised' === $order_item->status) {
-                    $ng_void       = __('Void', 'woocommerce');
-                    $ng_capture    = __('Capture', 'woocommerce');
-                    $ngAuthorised2 = <<<HTML
-                        <tr>
-                            <td>
-                                <input id="ngenius_void_submit" class="button void"
-                                 name="ngenius_void" type="submit" value="$ng_void" />
-                            </td>
-                            <td>
-                                <input id="ngenius_capture_submit" class="button button-primary"
-                                 name="ngenius_capture" type="submit" value="$ng_capture" />
-                            </td>
-                        </tr>
-
-HTML;
-                }
-
-                $orderStatuses  = NgeniusOrderStatuses::orderStatuses();
-                $ng_state       = __('Status:', 'woocommerce');
-                $ng_state_value = $order->get_status();
-
-                $itemState = $order_item->state;
-                foreach ($orderStatuses as $status) {
-                    if ("wc-" . $ng_state_value === $status["status"]) {
-                        $ng_state_value = $status["label"];
-                    }
-                }
-
-                $ng_payment_id_label = __('Payment_ID:', 'woocommerce');
-                $ng_payment_id       = $order_item->payment_id;
-
-                $ng_captured_label  = __('Captured:', 'woocommerce');
-                $ng_captured_amount = $currency_code . $order_item->amount;
-
-                $ng_refunded_label  = __('Refunded:', 'woocommerce');
-                $ng_refunded_amount = $currency_code . $refunded;
-
-                $html = <<<HTML
-                    <table>
-                    <tr>
-                        <td> $ng_state </td>
-                        <td> $ng_state_value </td>
-                    </tr>
-                    <tr>
-                        <td> $ng_payment_id_label </td>
-                        <td> $ng_payment_id </td>
-                    </tr>
-                    $ngAuthorised
-                 
-                    <tr>
-				        <td> $ng_refunded_label </td>
-				        <td> $ng_refunded_amount </td>
-				    </tr>
-				    $ngAuthorised2
-
-HTML;
-                // Don't display captured line on 'STARTED' and 'AUTHORISED' states
-                if ($itemState != 'STARTED'
-                    && $itemState != 'AUTHORISED'
-                    && $itemState != 'REVERSED'
-                ) {
-                    $html .= <<<HTML
-                    <tr>
-                        <td> $ng_captured_label </td>
-				        <td> $ng_captured_amount </td>
-                    </tr>
-HTML;
-                }
-                $html .= <<<HTML
- </table>
- HTML;
-                echo ent2ncr($html);
-            } catch (Exception $e) {
-                throw new InvalidArgumentException($e->getMessage());
-            }
-        }
-    }
-
-    /**
-     * Handle actions on order page
-     *
-     * @param int $post_id
-     *
-     * @return void
-     */
-    public function ngenius_online_actions($post_id)
-    {
-        $this->message = '';
-        if (isset($_POST['ngenius_capture']) || isset($_POST['ngenius_void'])) {
-            WC_Admin_Notices::remove_all_notices();
-            $order_item = $this->fetch_order($post_id);
-            $order      = wc_get_order($post_id);
-
-            if ($order && $order_item) {
-                $config      = new NgeniusGatewayConfig($this, $order);
-                $token_class = new NgeniusGatewayRequestToken($config);
-
-                $this->validate_complete($config, $token_class, $order, $order_item);
-            } else {
-                $this->message = 'Order #' . $post_id . ' not found.';
-                WC_Admin_Notices::add_custom_notice('ngenius', $this->message);
-            }
-            add_filter('redirect_post_location', array($this, 'add_notice_query_var'), 99);
-        }
-    }
-
-    public function validate_complete($config, $token_class, $order, $order_item)
+    public function validate_complete($config, $token_class, $order, $order_item, $ngenius_state)
     {
         if ($config->is_complete()) {
             $token = $token_class->get_access_token();
             if ($token) {
                 $config->set_token($token);
-                if (isset($_POST['ngenius_capture'])) {
+                if ($ngenius_state['ngenius_capture']) {
                     $this->ngenius_capture($order, $config, $order_item);
-                } elseif (isset($_POST['ngenius_void'])) {
+                } elseif ($ngenius_state['ngenius_void']) {
                     $this->ngenius_void($order, $config, $order_item);
                 }
                 WC_Admin_Notices::add_custom_notice('ngenius', $this->message);
@@ -600,12 +660,15 @@ HTML;
 
         $currencyCode = $orderItem->currency;
 
-        $capturedAmount = $result['captured_amt'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['captured_amt']) : $result['captured_amt'];
-        $totalCaptured  = $result['total_captured'] ? ValueFormatter::formatOrderStatusAmount($currencyCode, $result['total_captured']) : $result['total_captured'];
+        $capturedAmount = $result['captured_amt'];
+        $totalCaptured  = $result['total_captured'];
 
         ValueFormatter::formatCurrencyDecimals($currencyCode, $capturedAmount);
 
-        if ($result['status'] != "failed") {
+        if (isset($result['status']) && $result['status'] === "failed") {
+            $order_message = $result['message'];
+            $order->add_order_note($order_message);
+        } else {
             $data                 = [];
             $data['status']       = $result['orderStatus'];
             $data['state']        = $result['state'];
@@ -614,15 +677,12 @@ HTML;
             $this->updateData($data, array('nid' => $orderItem->nid));
             $order_message = 'Captured an amount ' . $currencyCode . $capturedAmount;
             $this->message = 'Success! ' . $order_message . ' of an order #' . $orderItem->order_id;
-            $order_message .= '. Transaction ID: ' . $result['transaction_id'];
+            $order_message .= ' | Transaction ID: ' . $result['transaction_id'];
             $order->payment_complete($result['transaction_id']);
             $order->update_status($result['orderStatus']);
             $order->add_order_note($order_message);
             $eMailer = new WC_Emails();
             $eMailer->customer_invoice($order);
-        } else {
-            $order_message = $result['message'];
-            $order->add_order_note($order_message);
         }
     }
 }

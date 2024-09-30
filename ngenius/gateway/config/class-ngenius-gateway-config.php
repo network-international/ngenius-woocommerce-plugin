@@ -97,6 +97,16 @@ class NgeniusGatewayConfig
     }
 
     /**
+     * Gets Debug Mode.
+     *
+     * @return string
+     */
+    public function get_debug_mode(): string
+    {
+        return $this->gateway->get_option('debugMode');
+    }
+
+    /**
      * Gets Api Url.
      *
      * @return string

@@ -5,17 +5,17 @@
  * Description: Receive payments using the Network International Payment Solutions payments provider.
  * Author: Network International
  * Author URI: https://www.network.ae/
- * Version: 1.0.5
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
- * Tested up to: 6.5.2
- * WC tested up to: 8.8.3
+ * Tested up to: 6.6.2
+ * WC tested up to: 9.3.3
  * WC requires at least: 6.0
  *
  * Developer: App Inlet (Pty) Ltd
  * Developer URI: https://www.appinlet.com/
  *
- * Copyright: © 2023 Network International
+ * Copyright: © 2024 Network International
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: ngenius
@@ -35,7 +35,7 @@ require_once "$f/vendor/autoload.php";
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 
-define('WC_GATEWAY_NGENIUS_VERSION', '1.0.5'); // WRCS: DEFINED_VERSION.
+define('WC_GATEWAY_NGENIUS_VERSION', '1.1.0'); // WRCS: DEFINED_VERSION.
 define(
     'WC_GATEWAY_NGENIUS_URL',
     untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__)))
@@ -55,7 +55,9 @@ function register_ngenius_order_status()
                 'show_in_admin_all_list'    => true,
                 'show_in_admin_status_list' => true,
                 'label_count'               => _n_noop(
+                    // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralSingular
                     $status['label'] . ' <span class="count">(%s)</span>',
+                    // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralPlural
                     $status['label'] . ' <span class="count">(%s)</span>'
                 ),
             )
@@ -64,27 +66,6 @@ function register_ngenius_order_status()
 }
 
 add_action('init', 'register_ngenius_order_status');
-add_action('init', 'custom_cancel_order_handler');
-
-/*
- * Restore Cart if order is canceled
- */
-function custom_cancel_order_handler(): void
-{
-    // Check if the cancel_order parameter is present
-    if (isset($_GET['cancel_order']) && $_GET['cancel_order'] === 'true') {
-        // Get the order ID
-        $order_id = isset($_GET['order_id']) ? absint($_GET['order_id']) : 0;
-
-        // Get the order object
-        $order = wc_get_order($order_id);
-
-        // Check if the order exists and has items
-        $order_items = $order ? $order->get_items() : array();
-
-        restoreCart($order_items);
-    }
-}
 
 /**
  * @param array $order_items
@@ -109,21 +90,9 @@ function restoreCart(array $order_items): void
 function ngenius_order_status($order_statuses)
 {
     $statuses = NgeniusOrderStatuses::orderStatuses();
-    $id       = get_the_ID();
-    if ('shop_order' === get_post_type() && $id && isset($_GET['action']) && 'edit' === $_GET['action']) {
-        $order = wc_get_order($id);
-        if ($order) {
-            $current_status = $order->get_status();
-            foreach ($statuses as $status) {
-                if ('wc-' . $current_status === $status['status']) {
-                    $order_statuses[$status['status']] = $status['label'];
-                }
-            }
-        }
-    } else {
-        foreach ($statuses as $status) {
-            $order_statuses[$status['status']] = $status['label'];
-        }
+
+    foreach ($statuses as $status) {
+        $order_statuses[$status['status']] = $status['label'];
     }
 
     return $order_statuses;

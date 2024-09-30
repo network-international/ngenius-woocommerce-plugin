@@ -2,9 +2,9 @@
 Contributors: appinlet
 Tags: ecommerce, e-commerce, woocommerce, automattic, payment, N-Genius, app inlet, credit card, payment request
 Requires at least: 6.0
-Tested up to: 6.5.2
+Tested up to: 6.6.2
 Requires PHP: 8.0
-Stable tag: 1.0.5
+Stable tag: 1.1.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -19,6 +19,12 @@ The N-Genius extension for WooCommerce enables you to accept payments via the N-
 We provide a secure checkout experience for your shoppers, knowing that intelligent fraud protection engines monitor your transactions around the clock.
 
 == Changelog ==
+= 1.1.0 - 2024-09-30 =
+ * Tested on WooCommerce 9.3.3, and WordPress 6.6.2.
+ * Added cron debugging/testing tool.
+ * Improved process flow for abandoned orders.
+ * Bugs fixes and improvements.
+
 = 1.0.5 - 2024-05-07 =
  * Tested on WooCommerce 8.8.3, and WordPress 6.5.2.
  * Add VISA additional mandatory fields to the Order API Request Body.

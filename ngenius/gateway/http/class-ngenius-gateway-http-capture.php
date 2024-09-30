@@ -3,6 +3,9 @@
 /**
  * NgeniusGatewayHttpCapture class.
  */
+
+use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
+
 class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
 {
     public function get_total_amount($response): int
@@ -24,7 +27,7 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
         if (isset($lastTransaction->state)
             && ('SUCCESS' === $lastTransaction->state)
             && isset($lastTransaction->amount->value)) {
-            return $lastTransaction->amount->value / 100;
+            return $lastTransaction->amount->value;
         }
 
         return null;
@@ -61,7 +64,7 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
      */
     protected function pre_process(array $data): string
     {
-        return json_encode($data);
+        return wp_json_encode($data);
     }
 
     /**
@@ -85,10 +88,14 @@ class NgeniusGatewayHttpCapture extends NgeniusGatewayHttpAbstract
                 $amount          = $this->get_total_amount($response);
             }
             $capturedAmt = $this->get_captured_amount($lastTransaction);
+            $capturedAmt = ValueFormatter::intToFloatRepresentation($response->amount->currencyCode, $capturedAmt);
 
             $transactionId = $this->get_transaction_id($lastTransaction);
 
-            $amount = ($amount > 0) ? $amount / 100 : 0;
+            $amount = ($amount > 0) ? ValueFormatter::intToFloatRepresentation(
+                $response->amount->currencyCode,
+                $amount
+            ) : 0;
             $state  = $response->state ?? '';
 
             $orderStatus = $this->get_order_status($state);

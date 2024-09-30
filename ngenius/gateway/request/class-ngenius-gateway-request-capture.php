@@ -37,9 +37,7 @@ class NgeniusGatewayRequestCapture
     {
         $currencyCode = $order_item->currency;
 
-        $amount = $order_item->amount;
-
-        ValueFormatter::formatCurrencyAmount($currencyCode, $amount);
+        $amount = ValueFormatter::floatToIntRepresentation($currencyCode, $order_item->amount);
 
         return [
             'token'   => $this->config->get_token(),
@@ -47,7 +45,7 @@ class NgeniusGatewayRequestCapture
                 'data'   => [
                     'amount'              => [
                         'currencyCode' => $currencyCode,
-                        'value'        => (int)($amount * 100),
+                        'value'        => $amount,
                     ],
                     'merchantDefinedData' => [
                         'pluginName'    => 'woocommerce',
