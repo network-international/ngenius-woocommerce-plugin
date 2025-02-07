@@ -1,5 +1,5 @@
 === N-Genius for WooCommerce ===
-Contributors: appinlet, bruceappinletcom
+Contributors: appinlet, bruceappinletcom, bruceanetwork
 Tags: ecommerce, e-commerce, woocommerce, automattic, payment, N-Genius, app inlet, credit card, payment request
 Requires at least: 6.0
 Tested up to: 6.6.2
