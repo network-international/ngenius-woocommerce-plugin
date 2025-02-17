@@ -1,10 +1,10 @@
-=== N-Genius for WooCommerce ===
-Contributors: appinlet, bruceappinletcom, bruceanetwork
-Tags: ecommerce, e-commerce, woocommerce, automattic, payment, N-Genius, app inlet, credit card, payment request
+=== N-Genius Online by Network ===
+Contributors: appinlet
+Tags: ecommerce, e-commerce, woocommerce, N-Genius, N-Genius by Network
 Requires at least: 6.0
-Tested up to: 6.6.2
+Tested up to: 6.7.1
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -19,6 +19,12 @@ The N-Genius extension for WooCommerce enables you to accept payments via the N-
 We provide a secure checkout experience for your shoppers, knowing that intelligent fraud protection engines monitor your transactions around the clock.
 
 == Changelog ==
+= 1.2.0 - 2025-02-17 =
+ * Tested on WooCommerce 9.6.0, and WordPress 6.7.1.
+ * Introduced a Continue Shopping button for improved user navigation.
+ * Added info display when the cron debugging tool is enabled.
+ * Updated the payment method name to “N-Genius Online by Network” for better brand consistency.
+
 = 1.1.0 - 2024-09-30 =
  * Tested on WooCommerce 9.3.3, and WordPress 6.6.2.
  * Added cron debugging/testing tool.

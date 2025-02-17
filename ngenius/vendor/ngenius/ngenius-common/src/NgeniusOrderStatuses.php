@@ -4,94 +4,94 @@ namespace Ngenius\NgeniusCommon;
 
 class NgeniusOrderStatuses
 {
-    static public function orderStatuses(): array
+    static public function orderStatuses($label = 'N-Genius', $key = 'ng'): array
     {
         return [
             [
-                'status' => 'wc-ng-pending',
-                'label'  => 'N-Genius Pending',
+                'status' => "wc-$key-pending",
+                'label'  => "$label Pending",
             ],
             [
-                'status' => 'wc-ng-processing',
-                'label'  => 'N-Genius Processing',
+                'status' => "wc-$key-processing",
+                'label'  => "$label Processing",
             ],
             [
-                'status' => 'wc-ng-failed',
-                'label'  => 'N-Genius Failed',
+                'status' => "wc-$key-failed",
+                'label'  => "$label Failed",
             ],
             [
-                'status' => 'wc-ng-complete',
-                'label'  => 'N-Genius Complete',
+                'status' => "wc-$key-complete",
+                'label'  => "$label Complete",
             ],
             [
-                'status' => 'wc-ng-authorised',
-                'label'  => 'N-Genius Authorised',
+                'status' => "wc-$key-authorised",
+                'label'  => "$label Authorised",
             ],
             [
-                'status' => 'wc-ng-captured',
-                'label'  => 'N-Genius Captured',
+                'status' => "wc-$key-captured",
+                'label'  => "$label Captured",
             ],
             [
-                'status' => 'wc-ng-part-refunded',
-                'label'  => 'N-Genius Partially Refunded',
+                'status' => "wc-$key-part-refunded",
+                'label'  => "$label Partially Refunded",
             ],
             [
-                'status' => 'wc-ng-auth-reversed',
-                'label'  => 'N-Genius Auth Reversed',
+                'status' => "wc-$key-auth-reversed",
+                'label'  => "$label Auth Reversed",
             ],
             [
-                'status' => 'wc-ng-refunded',
-                'label'  => 'N-Genius Fully Refunded',
+                'status' => "wc-$key-refunded",
+                'label'  => "$label Fully Refunded",
             ],
         ];
     }
 
-    static public function magentoOrderStatuses(): array
+    static public function magentoOrderStatuses($label = 'N-Genius', $key = 'ngenius'): array
     {
         return [
             [
-                'status' => 'ngenius_pending',
-                'label'  => 'N-Genius Pending',
+                'status' => "{$key}_pending",
+                'label'  => "$label Pending",
             ],
             [
-                'status' => 'ngenius_processing',
-                'label'  => 'N-Genius Processing',
+                'status' => "{$key}_processing",
+                'label'  => "$label Processing",
             ],
             [
-                'status' => 'ngenius_failed',
-                'label'  => 'N-Genius Failed',
+                'status' => "{$key}_failed",
+                'label'  => "$label Failed",
             ],
             [
-                'status' => 'ngenius_complete',
-                'label'  => 'N-Genius Complete',
+                'status' => "{$key}_complete",
+                'label'  => "$label Complete",
             ],
             [
-                'status' => 'ngenius_authorised',
-                'label'  => 'N-Genius Authorised',
+                'status' => "{$key}_authorised",
+                'label'  => "$label Authorised",
             ],
             [
-                'status' => 'ngenius_fully_captured',
-                'label'  => 'N-Genius Fully Captured',
+                'status' => "{$key}_fully_captured",
+                'label'  => "$label Fully Captured",
             ],
             [
-                'status' => 'ngenius_partially_captured',
-                'label'  => 'N-Genius Partially Captured',
+                'status' => "{$key}_partially_captured",
+                'label'  => "$label Partially Captured",
             ],
             [
-                'status' => 'ngenius_fully_refunded',
-                'label'  => 'N-Genius Fully Refunded',
+                'status' => "{$key}_fully_refunded",
+                'label'  => "$label Fully Refunded",
             ],
             [
-                'status' => 'ngenius_partially_refunded',
-                'label'  => 'N-Genius Partially Refunded',
+                'status' => "{$key}_partially_refunded",
+                'label'  => "$label Partially Refunded",
             ],
             [
-                'status' => 'ngenius_auth_reversed',
-                'label'  => 'N-Genius Auth Reversed',
+                'status' => "{$key}_auth_reversed",
+                'label'  => "$label Auth Reversed",
             ],
             [
-                'status' => 'ngenius_declined',
-                'label'  => 'N-Genius Declined',
+                'status' => "{$key}_declined",
+                'label'  => "$label Declined",
             ],
         ];
     }

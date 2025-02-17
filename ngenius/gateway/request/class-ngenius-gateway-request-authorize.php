@@ -21,11 +21,11 @@ class NgeniusGatewayRequestAuthorize extends NgeniusGatewayRequestAbstract
         $currency    = $order->get_currency();
         $amount      = ValueFormatter::floatToIntRepresentation($currency, $order->get_total());
         $countryCode = WC()->countries->get_country_calling_code($order->get_billing_country());
-        $debugMode = $this->config->get_debug_mode();
+        $debugMode   = $this->config->get_debug_mode();
 
         if ($debugMode === 'yes') {
             $cancelUrl = wc_get_checkout_url();
-        }  else {
+        } else {
             $cancelUrl = str_replace('&amp;', '&', $order->get_cancel_order_url());
         }
 

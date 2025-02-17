@@ -35,7 +35,7 @@ abstract class NgeniusGatewayHttpAbstract
      */
     public function place_request(NgeniusHttpTransfer $transferObject): WP_Error|array|null|stdClass
     {
-        $this->orderStatus = NgeniusOrderStatuses::orderStatuses();
+        $this->orderStatus = NgeniusOrderStatuses::orderStatuses('N-Genius', 'ng');
 
         try {
             $response = json_decode(NgeniusHTTPCommon::placeRequest($transferObject));

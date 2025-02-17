@@ -1,21 +1,21 @@
 <?php
 /*
- * Plugin Name: N-Genius Payment Gateway
+ * Plugin Name: N-Genius Online by Network
  * Plugin URI: https://github.com/network-international/ngenius-woocommerce-plugin/
  * Description: Receive payments using the Network International Payment Solutions payments provider.
  * Author: Network International
  * Author URI: https://www.network.ae/
- * Version: 1.1.0
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
- * Tested up to: 6.6.2
- * WC tested up to: 9.3.3
+ * Tested up to: 6.7.1
+ * WC tested up to: 9.6.0
  * WC requires at least: 6.0
  *
  * Developer: App Inlet (Pty) Ltd
  * Developer URI: https://www.appinlet.com/
  *
- * Copyright: © 2024 Network International
+ * Copyright: © 2025 Network International
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: ngenius
@@ -26,7 +26,7 @@
  */
 
 if (version_compare(phpversion(), '8.0', '<')) {
-    die("N-Genius Payment Gateway requires PHP 8.0 or higher.");
+    die("N-Genius Online by Network requires PHP 8.0 or higher.");
 }
 
 $f = dirname(__FILE__);
@@ -35,7 +35,7 @@ require_once "$f/vendor/autoload.php";
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 
-define('WC_GATEWAY_NGENIUS_VERSION', '1.1.0'); // WRCS: DEFINED_VERSION.
+define('WC_GATEWAY_NGENIUS_VERSION', '1.2.0'); // WRCS: DEFINED_VERSION.
 define(
     'WC_GATEWAY_NGENIUS_URL',
     untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__)))
@@ -44,7 +44,7 @@ define('WC_GATEWAY_NGENIUS_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
 
 function register_ngenius_order_status()
 {
-    $statuses = NgeniusOrderStatuses::orderStatuses();
+    $statuses = NgeniusOrderStatuses::orderStatuses('N-Genius', 'ng');
     foreach ($statuses as $status) {
         register_post_status(
             $status['status'],
@@ -55,10 +55,11 @@ function register_ngenius_order_status()
                 'show_in_admin_all_list'    => true,
                 'show_in_admin_status_list' => true,
                 'label_count'               => _n_noop(
-                    // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralSingular
+                // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralSingular
                     $status['label'] . ' <span class="count">(%s)</span>',
                     // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralPlural
-                    $status['label'] . ' <span class="count">(%s)</span>'
+                    $status['label'] . ' <span class="count">(%s)</span>',
+                    'ngenius'
                 ),
             )
         );
@@ -66,13 +67,38 @@ function register_ngenius_order_status()
 }
 
 add_action('init', 'register_ngenius_order_status');
+add_action('template_redirect', 'ngenius_cancel_order_handler', 10);
+
+/**
+ * Restore Cart if order is canceled
+ */
+function ngenius_cancel_order_handler(): void
+{
+    // Check if the cancel_order parameter is present and valid
+    if (isset($_GET['cancel_order'], $_GET['order_id'], $_GET['_wpnonce'])
+        && $_GET['cancel_order'] === 'true'
+        && wp_verify_nonce($_GET['_wpnonce'], 'woocommerce-cancel_order')) {
+        // Get the order ID
+        $order_id = absint($_GET['order_id']);
+
+        // Get the order object
+        $order = wc_get_order($order_id);
+
+        // Verify that the order exists and belongs to the current user
+        if ($order && current_user_can('view_order', $order_id)) {
+            // Restore cart from order items
+            $order_items = $order->get_items();
+            ngeniusRestoreCart($order_items);
+        }
+    }
+}
 
 /**
  * @param array $order_items
  *
  * @return void
  */
-function restoreCart(array $order_items): void
+function ngeniusRestoreCart(array $order_items): void
 {
     if (!empty($order_items)) {
         WC()->cart->empty_cart();
@@ -89,7 +115,7 @@ function restoreCart(array $order_items): void
 
 function ngenius_order_status($order_statuses)
 {
-    $statuses = NgeniusOrderStatuses::orderStatuses();
+    $statuses = NgeniusOrderStatuses::orderStatuses('N-Genius', 'ng');
 
     foreach ($statuses as $status) {
         $order_statuses[$status['status']] = $status['label'];
@@ -128,19 +154,19 @@ function ngenius_table_install()
 
 register_activation_hook(__FILE__, 'ngenius_table_install');
 
-function plugin_action_links($links)
+function ngenius_plugin_action_links($links)
 {
     $plugin_links = array(
         '<a href="admin.php?page=wc-settings&tab=checkout&section=ngenius">' . esc_html__(
             'Settings',
-            'woocommerce'
+            'ngenius'
         ) . '</a>',
     );
 
     return array_merge($plugin_links, $links);
 }
 
-add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'plugin_action_links');
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'ngenius_plugin_action_links');
 
 /*
  * The class itself, please note that it is inside plugins_loaded action hook
@@ -149,7 +175,7 @@ add_action('plugins_loaded', 'ngenius_init_gateway_class');
 
 /* end menu page */
 
-function print_errors()
+function ngenius_print_errors()
 {
     settings_errors('ngenius_error');
 }
@@ -187,13 +213,13 @@ function woocommerce_ngenius_woocommerce_blocks_support()
     }
 }
 
-add_action('woocommerce_order_refunded', 'after_refund', 10, 1);
+add_action('woocommerce_order_refunded', 'ngenius_after_refund', 10, 1);
 
-function after_refund($order_id): void
+function ngenius_after_refund($order_id): void
 {
     $order = wc_get_order($order_id);
     if ($order->get_payment_method() === "ngenius") {
-        $statuses = NgeniusOrderStatuses::orderStatuses();
+        $statuses = NgeniusOrderStatuses::orderStatuses('N-Genius', 'ng');
 
         if ((float)$order->get_remaining_refund_amount() > 0) {
             $order->update_status($statuses[6]["status"]);
