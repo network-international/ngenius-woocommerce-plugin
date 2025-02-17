@@ -15,3 +15,8 @@ our [documentation.](https://docs.ngenius-payments.com/docs/woocommerce-new)
 
 You can download the latest version of the plugin from
 our [Github releases page](https://github.com/network-international/ngenius-woocommerce-plugin/releases)
+
+## Compile WooCommerce Blocks Support from Source
+
+- npm install
+- npm run build

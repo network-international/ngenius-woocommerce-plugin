@@ -47,7 +47,7 @@ class NgeniusGatewayPayment
      */
     public function __construct()
     {
-        $this->orderStatus = NgeniusOrderStatuses::orderStatuses();
+        $this->orderStatus = NgeniusOrderStatuses::orderStatuses('N-Genius', 'ng');
     }
 
     /**
@@ -62,6 +62,7 @@ class NgeniusGatewayPayment
         $config       = new NgeniusGatewayConfig(new NgeniusGateway());
 
         if ($config->get_debug_mode() === 'yes') {
+            wc_add_notice(__('This is a cron debugging test, the order is still pending.'), 'notice');
             wp_redirect($redirect_url);
             exit();
         }
@@ -323,7 +324,7 @@ class NgeniusGatewayPayment
         global $wpdb;
 
         // Create a unique cache key based on the query parameters
-        $cache_key = 'fetch_order_' . md5($where);
+        $cache_key   = 'fetch_order_' . md5($where);
         $cache_group = 'ngenius_orders';
 
         // Try to get the cached result

@@ -78,7 +78,7 @@ class NgeniusAbstract extends WC_Payment_Gateway
         // URL of the icon that will be displayed on checkout page near your gateway name
         $this->icon         = '';
         $this->hasFields    = false; // in case you need a custom credit card form
-        $this->method_title = 'N-Genius Payment Gateway';
+        $this->method_title = 'N-Genius Online by Network';
 
         // will be displayed on the options page
         $this->method_description = 'Payment Gateway from Network International Payment Solutions';
@@ -97,7 +97,7 @@ class NgeniusAbstract extends WC_Payment_Gateway
         // Load the settings.
         $this->init_settings();
 
-        $this->method_title       = __('N-Genius', 'ngenius');
+        $this->method_title       = __('N-Genius Online by Network', 'ngenius');
         $this->method_description = __(
             'N-Genius works by sending the customer to N-Genius to complete their payment.',
             'ngenius'
