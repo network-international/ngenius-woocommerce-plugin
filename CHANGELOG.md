@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.0)
+
+### Added
+- **Manual Payment Links**: Added functionality to generate and manage manual payment links for enhanced flexibility in transaction processing.
+- **Updated Branding**: Replaced outdated Network logo with the latest version for consistent branding across the plugin.
+- **Dependency Validation**: Implemented automatic checks for international dependencies to ensure seamless compatibility and installation.
+
+### Fixed
+- **Transaction Handling**: Resolved an issue where N-Genius transactions were occasionally missing from orders, improving reliability.
+- **Minor Bug Fixes**: Addressed various small bugs to enhance overall stability and user experience.
+
 ## [1.2.0](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.2.0)
 
 ### Added

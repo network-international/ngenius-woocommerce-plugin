@@ -1,0 +1,17 @@
+.payment-icon {
+    width: 100px;
+    height: 24px;
+    object-fit: contain;
+}
+.payment-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+.ngenius-payment-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}

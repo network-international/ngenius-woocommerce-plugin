@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [[v1.3.0]](https://github.com/network-international/ngenius-common/releases/tag/v1.3.0)
+
+- Added invoice API compatibility.
+
+## [[v1.2.1]](https://github.com/network-international/ngenius-common/releases/tag/v1.2.1)
+
+- Improved error handling for order status queries with missing values.
+
+## [[v1.2.0]](https://github.com/network-international/ngenius-common/releases/tag/v1.2.0)
+
+- Upgraded the request handler to GuzzleHTTP.
+
 ## [[v1.1.0]](https://github.com/network-international/ngenius-common/releases/tag/v1.1.0)
 
 - Allow customisable order statuses.
@@ -12,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ## [[v1.0.11]](https://github.com/network-international/ngenius-common/releases/tag/v1.0.11)
 
-- Add Transaction Processor class. 
+- Add Transaction Processor class.
 
 ## [[v1.0.10]](https://github.com/network-international/ngenius-common/releases/tag/v1.0.10)
 

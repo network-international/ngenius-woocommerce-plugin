@@ -131,7 +131,8 @@ class ApiProcessor
      */
     public function processPaymentAction(&$paymentAction, &$paymentState)
     {
-        if ($this->response['_embedded']['payment'][0]['paymentMethod']['name'] === 'CHINA_UNION_PAY' &&
+        if (isset($this->response['_embedded']['payment'][0]['paymentMethod']['name']) &&
+            $this->response['_embedded']['payment'][0]['paymentMethod']['name'] === 'CHINA_UNION_PAY' &&
             $paymentAction === 'SALE') {
             $paymentAction = 'PURCHASE';
             $paymentState  = self::NGENIUS_PURCHASED;
