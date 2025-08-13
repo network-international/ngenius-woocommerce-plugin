@@ -8,7 +8,7 @@ module.exports = {
 		'index': '/resources/js/frontend/index.js',
 	},
 	output: {
-		path: path.resolve(__dirname, 'ngenius/assets/js'),
+		path: path.resolve(__dirname, 'ngenius/resources/js'),
 		filename: '[name].js',
 	},
 	plugins: [

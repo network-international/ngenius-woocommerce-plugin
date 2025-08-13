@@ -2,9 +2,11 @@
 
 namespace Ngenius\NgeniusCommon;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+
 class NgeniusHTTPCommon
 {
-
     /**
      * @param NgeniusHTTPTransfer $ngeniusHTTPTransfer
      *
@@ -12,47 +14,45 @@ class NgeniusHTTPCommon
      */
     public static function placeRequest(NgeniusHTTPTransfer $ngeniusHTTPTransfer): string|bool
     {
+        $client       = new Client();
+        $method       = $ngeniusHTTPTransfer->getMethod();
+        $url          = $ngeniusHTTPTransfer->getUrl();
+        $headersArray = $ngeniusHTTPTransfer->getHeaders();
+        $data         = $ngeniusHTTPTransfer->getData();
+
         $httpVersion = match ($ngeniusHTTPTransfer->getHttpVersion()) {
-            "CURL_HTTP_VERSION_NONE" => CURL_HTTP_VERSION_NONE,
-            "CURL_HTTP_VERSION_1_0" => CURL_HTTP_VERSION_1_0,
-            "CURL_HTTP_VERSION_1_1" => CURL_HTTP_VERSION_1_1,
-            "CURL_HTTP_VERSION_2_0" => CURL_HTTP_VERSION_2_0,
-            "CURL_HTTP_VERSION_2TLS" => CURL_HTTP_VERSION_2TLS,
-            "CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE" => CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE,
-            default => CURL_HTTP_VERSION_NONE,
+            "CURL_HTTP_VERSION_1_0" => '1.0',
+            "CURL_HTTP_VERSION_2_0", "CURL_HTTP_VERSION_2TLS", "CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE" => '2.0',
+            default => '1.1',
         };
 
-        $data   = $ngeniusHTTPTransfer->getData();
-        $method = $ngeniusHTTPTransfer->getMethod();
+        // Convert the headers array to an associative array for Guzzle
+        $headers = [];
+        foreach ($headersArray as $header) {
+            [$key, $value] = explode(':', $header, 2);
+            $headers[trim($key)] = trim($value);
+        }
 
-        $ch         = curl_init();
-        $curlConfig = array(
-            CURLOPT_URL            => $ngeniusHTTPTransfer->getUrl(),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING       => '',
-            CURLOPT_MAXREDIRS      => 10,
-            CURLOPT_TIMEOUT        => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION   => $httpVersion,
-            CURLOPT_CUSTOMREQUEST  => $method,
-            CURLOPT_HTTPHEADER     => $ngeniusHTTPTransfer->getHeaders()
-        );
+        // Prepare options for the Guzzle request
+        $options = [
+            'headers'     => $headers,
+            'http_errors' => false, // To handle non-2xx responses gracefully
+            'version'     => $httpVersion,
+        ];
 
+        // Add the payload if the request includes data
         if (!empty($data)) {
-            $curlConfig[CURLOPT_POSTFIELDS] = json_encode($data);
+            $options['json'] = $data;
         }
 
-        if ($method === "PUT") {
-            $curlConfig[CURLOPT_PUT] = true;
+        try {
+            $response = $client->request($method, $url, $options);
+
+            // Return the response body as a string
+            return $response->getBody()->getContents();
+        } catch (RequestException $e) {
+            // Handle exceptions and return error message
+            return $e->getMessage();
         }
-
-        curl_setopt_array($ch, $curlConfig);
-        $response = curl_exec($ch);
-
-        if (curl_errno($ch)) {
-            return curl_error($ch);
-        }
-
-        return $response;
     }
 }

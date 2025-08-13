@@ -5,9 +5,9 @@ namespace Ngenius\NgeniusCommon\Processor;
 class TransactionProcessor
 {
     private array $response;
-    private const EMBEDDED_LITERAL = '_embedded';
-    private const CAPTURE_LITERAL = 'cnp:capture';
-    private const REFUND_LITERAL = 'cnp:refund';
+    private const EMBEDDED_LITERAL    = '_embedded';
+    private const CAPTURE_LITERAL     = 'cnp:capture';
+    private const REFUND_LITERAL      = 'cnp:refund';
     private const NGENIUS_CUP_RESULTS = 'cnp:china_union_pay_results';
 
     public function __construct(array $response)

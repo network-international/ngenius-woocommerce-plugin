@@ -2,7 +2,7 @@
   "name": "ngenius",
   "title": "WooCommerce NGenius Gateway",
   "version": "1.0.5",
-  "description": "![Banner](assets/banner.jpeg)",
+  "description": "![Banner](resources/banner.jpeg)",
   "main": "index.js",
   "engines": {
     "node": ">=16.13.0",

@@ -12,7 +12,8 @@
   ],
   "require": {
     "php": "^8.0",
-    "megastruktur/phone-country-codes": "0.4"
+    "megastruktur/phone-country-codes": "0.4",
+    "guzzlehttp/guzzle": "^7.9"
   },
   "autoload": {
     "psr-4": {

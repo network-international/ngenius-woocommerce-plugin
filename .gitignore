@@ -122,4 +122,4 @@ out/
 /node_modules/.package-lock.json
 /node_modules/.cache
 node_modules
-ngenius/assets/builds
+ngenius/resources/builds

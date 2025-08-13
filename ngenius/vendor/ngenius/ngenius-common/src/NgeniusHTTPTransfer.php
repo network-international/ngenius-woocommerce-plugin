@@ -61,6 +61,19 @@ class NgeniusHTTPTransfer
     }
 
     /**
+     * @param $token
+     *
+     * @return void
+     */
+    public function setInvoiceHeaders($token): void
+    {
+        $this->setHeaders([
+                              "Authorization: Bearer $token",
+                              "Content-type: application/vnd.ni-invoice.v1+json",
+                          ]);
+    }
+
+    /**
      * @return string
      */
     public function getUrl(): string

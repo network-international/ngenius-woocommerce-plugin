@@ -1,10 +1,10 @@
 === N-Genius Online by Network ===
-Contributors: appinlet
+Contributors: appinlet, bruceanetwork
 Tags: ecommerce, e-commerce, woocommerce, N-Genius, N-Genius by Network
 Requires at least: 6.0
-Tested up to: 6.7.1
+Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -18,7 +18,17 @@ The N-Genius extension for WooCommerce enables you to accept payments via the N-
 
 We provide a secure checkout experience for your shoppers, knowing that intelligent fraud protection engines monitor your transactions around the clock.
 
+= Publicly documented resources for generated/compressed content =
+Should you wish to, you may compile the WooCommerce Blocks Support <a href="https://github.com/network-international/ngenius-woocommerce-plugin?tab=readme-ov-file#compile-woocommerce-blocks-support-from-source">directly from source</a>.
+
 == Changelog ==
+= 1.3.0 - 2025-08-13 =
+ * Manual Payment Links: Added functionality to generate and manage manual payment links for enhanced flexibility in transaction processing.
+ * Updated Branding: Replaced outdated Network logo with the latest version for consistent branding across the plugin.
+ * Dependency Validation: Implemented automatic checks for international dependencies to ensure seamless compatibility and installation.
+ * Transaction Handling: Resolved an issue where N-Genius transactions were occasionally missing from orders, improving reliability.
+ * Minor Bug Fixes: Addressed various small bugs to enhance overall stability and user experience.
+
 = 1.2.0 - 2025-02-17 =
  * Tested on WooCommerce 9.6.0, and WordPress 6.7.1.
  * Introduced a Continue Shopping button for improved user navigation.
