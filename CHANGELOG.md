@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.1)
+
+### Changed
+- **CSS Improvements**: Adjusted payment icon styling for better compatibility with classic checkout themes.
+
 ## [1.3.0](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.0)
 
 ### Added

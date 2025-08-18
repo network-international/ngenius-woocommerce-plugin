@@ -1,6 +1,6 @@
 .payment-icon {
-    width: 100px;
-    height: 24px;
+    width: auto;
+    height: 18px;
     object-fit: contain;
 }
 .payment-title {

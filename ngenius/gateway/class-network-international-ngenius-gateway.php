@@ -778,7 +778,7 @@ class NetworkInternationalNgeniusGateway extends NetworkInternationalNgeniusAbst
         $plugin_url = plugin_dir_url(dirname(__FILE__));
         $logo_url   = $plugin_url . 'resources/network_logo.png';
 
-        $icon = '<img src="' . esc_url($logo_url) . '" alt="' . esc_attr($this->get_title()) . '" style="height: 100px;vertical-align: middle;" />';
+        $icon = '<img src="' . esc_url($logo_url) . '" alt="' . esc_attr($this->get_title()) . '" style="height: 18px;vertical-align: middle;" />';
 
         return apply_filters('woocommerce_gateway_icon', $icon, $this->id);
     }
