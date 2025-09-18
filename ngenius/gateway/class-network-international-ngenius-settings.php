@@ -58,6 +58,11 @@ class NetworkInternationalNgeniusSettings extends WC_Settings_API
     public function overrideFormFieldsVariable()
     {
         return array(
+            'onboarding_link' => array(
+            'title'       => '',
+            'type'        => 'title',
+            'description' => 'Don&rsquo;t have credentials yet? Click <a href="https://www.network.ae/en/merchant-solutions/ecommerce-payments/plugins?utm_source=WooCommerce&utm_medium=referral&utm_content=link&utm_term=partner-plugins&utm_campaign=woocommerce-partner" target="_blank" rel="noopener noreferrer" style="font-weight:600; text-decoration:underline;">here</a> to get started with Network International and gain access to N-Genius&trade; payments for WooCommerce.',
+        ),
             'enabled'                       => array(
                 'title'   => __('Enable/Disable', 'ngenius'),
                 'label'   => __('Enable N-Genius Online by Network', 'ngenius'),
