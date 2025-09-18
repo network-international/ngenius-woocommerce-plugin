@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.2](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.2)
+
+### Added
+
+- Onboarding Link in Plugin Interface: Added an accessible link within the WooCommerce plugin interface that redirects merchants to the onboarding site for e-commerce payment solutions. The link is prominently placed in the plugin's settings panel, ensuring easy access for merchants to initiate the onboarding process.
+
 ## [1.3.1](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.1)
 
 ### Changed

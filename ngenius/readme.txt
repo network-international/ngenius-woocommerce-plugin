@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, woocommerce, N-Genius, N-Genius by Network
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -22,7 +22,10 @@ We provide a secure checkout experience for your shoppers, knowing that intellig
 Should you wish to, you may compile the WooCommerce Blocks Support <a href="https://github.com/network-international/ngenius-woocommerce-plugin?tab=readme-ov-file#compile-woocommerce-blocks-support-from-source">directly from source</a>.
 
 == Changelog ==
-= 1.3.1 - 2025-08-18 =
+= 1.3.2 - 2025-09-18 =
+ * Onboarding Link in Plugin Interface: Added an accessible link within the WooCommerce plugin interface that redirects merchants to the onboarding site for e-commerce payment solutions. The link is prominently placed in the plugin's settings panel, ensuring easy access for merchants to initiate the onboarding process.
+
+ = 1.3.1 - 2025-08-18 =
  * CSS Improvements: Adjusted payment icon styling for better compatibility with classic checkout themes.
 
 = 1.3.0 - 2025-08-13 =
