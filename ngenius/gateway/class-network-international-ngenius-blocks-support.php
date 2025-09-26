@@ -1,10 +1,16 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
-
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
+
+add_action('plugins_loaded', function() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+});
 
 /**
  * Ngenius payment method integration
@@ -53,6 +59,10 @@ final class NetworkInternationalNgeniusBlocksSupport extends AbstractPaymentMeth
     {
         $payment_gateways_class = WC()->payment_gateways();
         $payment_gateways       = $payment_gateways_class->payment_gateways();
+
+        if (!isset($payment_gateways['ngenius']) || !$payment_gateways['ngenius']) {
+            return false;
+        }
 
         return $payment_gateways['ngenius']->is_available();
     }
@@ -114,6 +124,10 @@ final class NetworkInternationalNgeniusBlocksSupport extends AbstractPaymentMeth
     public function get_supported_features()
     {
         $payment_gateways = WC()->payment_gateways->payment_gateways();
+
+        if (!isset($payment_gateways['ngenius']) || !$payment_gateways['ngenius']) {
+            return [];
+        }
 
         return $payment_gateways['ngenius']->supports;
     }

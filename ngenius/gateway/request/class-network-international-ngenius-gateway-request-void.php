@@ -1,7 +1,17 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
+add_action('plugins_loaded', function() {
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+});
+
+if (!class_exists('WooCommerce')) {
+    return;
 }
 
 /**

@@ -1,14 +1,20 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
+
+add_action('plugins_loaded', function() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+});
 
 /**
  * NetworkInternationalNgeniusGatewayHttpCapture class.
  */
-
-use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
 
 class NetworkInternationalNgeniusGatewayHttpCapture extends NetworkInternationalNgeniusGatewayHttpAbstract
 {

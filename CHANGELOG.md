@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.3](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.3)
+
+### Fixed
+
+- **Composer Version Issue**: This is a fix for an issue identified in automated testing, as it corrects a problem with the Composer version to ensure compatibility.
+
+### Added
+
+- **WooCommerce Active Check**: The addition of programmatic checks to verify WooCommerce is active and admin-side notifications are new features or functionalities introduced to the plugin.
+
+### Changed
+
+- **Logging Configuration**: Disabling logging by default modifies an existing behavior to align with data privacy best practices.
+
 ## [1.3.2](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.2)
 
 ### Added

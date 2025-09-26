@@ -1,15 +1,20 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+use \Ngenius\NgeniusCommon\NgeniusHTTPCommon;
+use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
 
 $f = dirname(__DIR__, 2);
 require_once "$f/vendor/autoload.php";
 
-use \Ngenius\NgeniusCommon\NgeniusHTTPCommon;
-use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
+add_action('plugins_loaded', function() {
+    if (!defined('ABSPATH')) {
+        exit;
+    }
 
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+});
 
 /**
  * Class NetworkInternationalNgeniusGatewayRequestToken

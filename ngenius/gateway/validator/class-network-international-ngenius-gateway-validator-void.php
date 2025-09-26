@@ -1,8 +1,14 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+add_action('plugins_loaded', function() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+});
 
 /**
  * Class NetworkInternationalNgeniusGatewayValidatorVoid

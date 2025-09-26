@@ -1,16 +1,22 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+add_action('plugins_loaded', function() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
 
-$f = dirname(__DIR__, 1);
-require_once "$f/vendor/autoload.php";
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+});
 
 use Automattic\WooCommerce\Admin\Overrides\Order;
 use \Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
 use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 use Ngenius\NgeniusCommon\Processor\ApiProcessor;
+
+$f = dirname(__DIR__, 1);
+require_once "$f/vendor/autoload.php";
 
 /**
  * NetworkInternationalNgeniusGatewayPayment class.

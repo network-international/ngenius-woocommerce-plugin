@@ -1,17 +1,24 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+add_action('plugins_loaded', function() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+});
+
+use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
+use Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
+use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
+
 
 $f = dirname(__DIR__, 1);
 require_once "$f/vendor/autoload.php";
 
 require_once dirname(__FILE__) . '/class-network-international-ngenius-abstract.php';
-
-use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
-use Ngenius\NgeniusCommon\NgeniusHTTPTransfer;
-use Ngenius\NgeniusCommon\NgeniusOrderStatuses;
 
 /**
  * NetworkInternationalNgeniusGateway class.
