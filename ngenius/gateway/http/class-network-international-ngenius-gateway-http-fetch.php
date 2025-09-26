@@ -1,8 +1,15 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+// Check WooCommerce availability in plugins_loaded hook as recommended
+add_action('plugins_loaded', function() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+});
 
 /**
  * NetworkInternationalNgeniusGatewayHttpFetch class.

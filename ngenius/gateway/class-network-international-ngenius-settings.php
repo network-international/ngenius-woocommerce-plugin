@@ -1,8 +1,14 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+add_action('plugins_loaded', function() {
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+});
 
 /**
  * Settings for N-Genius Gateway.
@@ -184,7 +190,7 @@ class NetworkInternationalNgeniusSettings extends WC_Settings_API
                     __('Log file will be %s', 'ngenius'),
                     '<code>' . WC_Log_Handler_File::get_log_file_path('ngenius') . '</code>'
                 ),
-                'default'     => 'yes',
+                'default'     => 'no',
             ),
             'debugMode'                     => array(
                 'title'       => __('Cron Debug Mode', 'ngenius'),

@@ -2,6 +2,12 @@
   "name": "ngenius/woocommerce",
   "type": "composer-plugin",
   "require": {
-    "ngenius/ngenius-common": "v1.3.0"
+    "ngenius/ngenius-common": "v1.3.0",
+    "symfony/deprecation-contracts": "^2.5"
+  },
+  "config": {
+    "platform": {
+      "php": "8.0.30"
+    }
   }
 }

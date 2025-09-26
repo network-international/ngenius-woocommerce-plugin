@@ -1,10 +1,16 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
-
 use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
+
+add_action('plugins_loaded', function() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+});
 
 /**
  * NetworkInternationalNgeniusGatewayHttpRefund class.

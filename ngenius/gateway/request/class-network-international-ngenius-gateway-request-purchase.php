@@ -1,12 +1,18 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
-
 use Ngenius\NgeniusCommon\Formatter\ValueFormatter;
 
 require_once 'class-network-international-ngenius-gateway-request-abstract.php';
+
+add_action('plugins_loaded', function() {
+    if (!defined('ABSPATH')) {
+        exit;
+    }
+
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+});
 
 /**
  * NetworkInternationalNgeniusGatewayRequestPurchase class.
