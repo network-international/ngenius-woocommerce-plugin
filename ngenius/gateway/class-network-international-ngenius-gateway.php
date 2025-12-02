@@ -94,7 +94,7 @@ class NetworkInternationalNgeniusGateway extends NetworkInternationalNgeniusAbst
     public function log(string $message, string $level = 'debug')
     {
         if ('yes' === $this->get_option('debug', 'no')) {
-            $this->log($level, $message, array('source' => 'ngenius'));
+            $this->log->log($level, $message, array('source' => 'ngenius'));
         }
     }
 
