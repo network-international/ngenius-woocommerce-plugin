@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.7](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.7)
+
+### Technical
+
+- Important security updates.
+
 ## [1.3.6](https://github.com/network-international/ngenius-woocommerce-plugin/releases/tag/1.3.6)
 
 ### Fixed

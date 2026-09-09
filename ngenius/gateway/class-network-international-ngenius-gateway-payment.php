@@ -69,6 +69,22 @@ class NetworkInternationalNgeniusGatewayPayment
             wp_safe_redirect($redirect_url);
             exit;
         }
+
+        $order_item = $this->fetch_order_by_reference($order_ref);
+        if (!$order_item || !isset($order_item->order_id)) {
+            wp_safe_redirect($redirect_url);
+            exit;
+        }
+
+        if (!$this->is_valid_signed_callback_request((int) $order_item->order_id)) {
+            wc_get_logger()->warning(
+                'N-GENIUS: Blocked unsigned or invalid callback request for ref ' . sanitize_text_field($order_ref),
+                array('source' => 'ngenius')
+            );
+            wp_safe_redirect($redirect_url);
+            exit;
+        }
+
         $config = new NetworkInternationalNgeniusGatewayConfig(new NetworkInternationalNgeniusGateway());
 
         if ($config->get_debug_mode() === 'yes') {
@@ -85,12 +101,6 @@ class NetworkInternationalNgeniusGatewayPayment
         $responseArray = $this->objectToArray($result);
         if (isset($result->{self::NGENIUS_EMBEDED}->payment) && is_array($result->{self::NGENIUS_EMBEDED}->payment)) {
             $apiProcessor = new ApiProcessor($responseArray);
-            $order_item = $this->fetch_order_by_reference($order_ref);
-
-            if (!$order_item || !isset($order_item->order_id)) {
-                wp_safe_redirect($redirect_url);
-                exit;
-            }
             $order = $this->process_order($apiProcessor, $order_item, $result->action ?? '');
 
             if ($order instanceof WC_Order) {
@@ -99,6 +109,35 @@ class NetworkInternationalNgeniusGatewayPayment
         }
         wp_safe_redirect($redirect_url);
         exit;
+    }
+
+    /**
+     * Validates callback signature generated in merchantAttributes.redirectUrl.
+     *
+     * @param int $expected_order_id
+     * @return bool
+     */
+    private function is_valid_signed_callback_request(int $expected_order_id): bool
+    {
+        $order_id = (int) filter_input(INPUT_GET, 'oid', FILTER_VALIDATE_INT);
+        $signature = (string) filter_input(INPUT_GET, 'ngenius_sig', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+        if ($order_id <= 0 || empty($signature) || $order_id !== $expected_order_id) {
+            return false;
+        }
+
+        $order = wc_get_order($order_id);
+        if (!$order instanceof WC_Order) {
+            return false;
+        }
+
+        $expected_signature = hash_hmac(
+            'sha256',
+            $order_id . '|' . (string) $order->get_order_key(),
+            wp_salt('auth')
+        );
+
+        return hash_equals($expected_signature, $signature);
     }
 
     public function update_order_status($action, $order, ApiProcessor $apiProcessor)

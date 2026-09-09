@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, woocommerce, N-Genius, N-Genius by Network
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.6
+Stable tag: 1.3.7
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -22,6 +22,9 @@ We provide a secure checkout experience for your shoppers, knowing that intellig
 Should you wish to, you may compile the WooCommerce Blocks Support <a href="https://github.com/network-international/ngenius-woocommerce-plugin?tab=readme-ov-file#compile-woocommerce-blocks-support-from-source">directly from source</a>.
 
 == Changelog ==
+= 1.3.7 - 2026-09-09 =
+ * Important security updates.
+
 = 1.3.6 - 2026-02-04 =
  * Cache Key Fix: Fixed cache key collision issue in order recovery flow that was causing declined payment re-attempts to fail on some servers with longer cache timeouts. Orders now properly update from failed to successful status after recovery transactions.
 
