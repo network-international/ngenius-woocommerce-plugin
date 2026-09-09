@@ -47,7 +47,7 @@ class NetworkInternationalNgeniusGatewayRequestSale extends NetworkInternational
                     'value'        => $amount,
                 ],
                 'merchantAttributes'     => [
-                    'redirectUrl'          => add_query_arg('wc-api', 'ngeniusonline', home_url('/')),
+                    'redirectUrl'          => $this->get_redirect_url($order),
                     'skipConfirmationPage' => true,
                     'cancelUrl'            => $cancelUrl,
                     'cancelText'           => 'Continue Shopping'

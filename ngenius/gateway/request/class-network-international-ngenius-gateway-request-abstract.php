@@ -60,6 +60,29 @@ abstract class NetworkInternationalNgeniusGatewayRequestAbstract
     }
 
     /**
+     * Builds a signed callback URL so only genuine payment redirects can update orders.
+     *
+     * @param WC_Order $order
+     *
+     * @return string
+     */
+    protected function get_redirect_url($order): string
+    {
+        $order_id = (int) $order->get_id();
+        $order_key = (string) $order->get_order_key();
+        $signature = hash_hmac('sha256', $order_id . '|' . $order_key, wp_salt('auth'));
+
+        return add_query_arg(
+            array(
+                'wc-api'      => 'ngeniusonline',
+                'oid'         => $order_id,
+                'ngenius_sig' => $signature,
+            ),
+            home_url('/')
+        );
+    }
+
+    /**
      * Builds abstract request array
      *
      * @param array $order
